@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sort the AI Approaches</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 15px;
+    background: #ffffff;
+    color: #1a1a1a;
+    padding: 1.25rem 1.5rem 2rem;
+    line-height: 1.5;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1F1976;
+    margin-bottom: 10px;
+  }
+
+  .directions {
+    background: #D5EFFF;
+    border-radius: 10px;
+    padding: 13px 16px;
+    margin-bottom: 1.25rem;
+    font-size: 13.5px;
+    color: #06338D;
+    line-height: 1.6;
+  }
+
+  .progress-wrap {
+    margin-bottom: 1.5rem;
+  }
+  .progress-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #4C42CF;
+    margin-bottom: 6px;
+  }
+  .progress-track {
+    height: 8px;
+    background: #E4E2F8;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #4C42CF;
+    border-radius: 999px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+
+  /* ── Card bank ── */
+  .bank-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+  }
+  .bank {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    min-height: 150px;
+    background: #FAFAFC;
+    border: 1.5px dashed #E4E2F8;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 1.75rem;
+  }
+  .bank:empty::after {
+    content: "All cards sorted!";
+    color: #aaa;
+    font-size: 13px;
+    font-style: italic;
+    align-self: center;
+  }
+
+  .card {
+    width: 148px;
+    background: #ffffff;
+    border: 1.5px solid #E4E2F8;
+    border-radius: 12px;
+    padding: 10px;
+    cursor: grab;
+    user-select: none;
+    box-shadow: 0 2px 6px rgba(31,25,118,0.06);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    position: relative;
+  }
+  .card:hover {
+    transform: translateY(-3px) rotate(-1deg);
+    box-shadow: 0 6px 16px rgba(31,25,118,0.14);
+  }
+  .card.selected {
+    border-color: #4C42CF;
+    box-shadow: 0 0 0 3px rgba(76,66,207,0.25);
+    transform: translateY(-3px) rotate(-1deg);
+  }
+  .card.dragging { opacity: 0.4; }
+  .card:focus-visible {
+    outline: 3px solid #4C42CF;
+    outline-offset: 2px;
+  }
+
+  .card-img {
+    width: 100%;
+    height: 84px;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+    background: #F0EFFB;
+  }
+  .card-img-fallback {
+    display: none;
+    width: 100%;
+    height: 84px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #E4E2F8, #F0EFFB);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 11px;
+    color: #7A74C4;
+    font-weight: 600;
+    padding: 6px;
+    line-height: 1.4;
+  }
+  .card-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #1F1976;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .card-hint {
+    font-size: 10.5px;
+    color: #aaa;
+    text-align: center;
+    margin-top: 3px;
+  }
+
+  .card.correct {
+    cursor: default;
+    border-color: #7CDB87;
+    background: #F2FBF3;
+  }
+  .card.correct:hover { transform: none; box-shadow: 0 2px 6px rgba(31,25,118,0.06); }
+  .card.correct .card-title::after {
+    content: " \2713";
+    color: #003F25;
+  }
+  .card-reveal {
+    display: none;
+    font-size: 12px;
+    color: #003F25;
+    background: #CCF1D0;
+    border-radius: 8px;
+    padding: 8px 9px;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .card.correct .card-reveal { display: block; }
+
+  .card.shake { animation: shake 0.4s; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  /* ── Zones ── */
+  .zones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .zone {
+    border-radius: 12px;
+    min-height: 220px;
+    padding: 14px;
+    border: 2px dashed transparent;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .zone-header {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .zone[data-zone="rules"] { background: #F5F4FD; }
+  .zone[data-zone="rules"] .zone-header { background: #4C42CF; }
+  .zone[data-zone="data"] { background: #EFF8FF; }
+  .zone[data-zone="data"] .zone-header { background: #0099F3; }
+
+  .zone.drag-over { border-color: #ACA8EA; }
+  .zone-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .zone-empty-msg {
+    font-size: 12.5px;
+    color: #999;
+    font-style: italic;
+    padding: 8px 4px;
+  }
+
+  /* ── Buttons ── */
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 1.5rem;
+    align-items: center;
+  }
+  .btn {
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 22px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  .btn-check {
+    background: #4C42CF;
+    color: #fff;
+  }
+  .btn-check:hover:not(:disabled) { background: #1F1976; }
+  .btn-check:disabled { background: #ACA8EA; cursor: not-allowed; opacity: 0.6; }
+  .btn-reset {
+    background: none;
+    color: #4C42CF;
+    border: 1.5px solid #E4E2F8;
+  }
+  .btn-reset:hover { background: #F5F4FD; }
+  .btn:focus-visible { outline: 3px solid #ACA8EA; outline-offset: 2px; }
+
+  .status-line {
+    font-size: 13px;
+    color: #555;
+    margin-left: auto;
+  }
+
+  .reflection-box {
+    display: none;
+    background-color: #D5EFFF;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-top: 1.5rem;
+    font-size: 14pt;
+    color: #06338D;
+    line-height: 1.6;
+  }
+  .reflection-box.show { display: block; }
+  .reflection-box strong { color: #06338D; }
+
+  .sr-live {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card, .card:hover, .card.selected, .zone, .progress-fill { transition: none !important; }
+    .card.shake { animation: none !important; }
+  }
+
+  @media (max-width: 560px) {
+    .zones { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="aria-live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
+
+<h1>Sort the AI Approaches</h1>
+
+<div class="directions" role="note">
+  <strong>How to sort:</strong> Drag each card into the zone where it belongs. On a keyboard, press Enter or Space on a card to select it, then Enter or Space on a zone to place it there. When all four are sorted, press Check Answers.
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-label" id="progress-label">0 of 4 sorted</div>
+  <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0" id="progress-bar">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+</div>
+
+<div class="bank-label">Card Bank</div>
+<div class="bank" id="bank" role="list" aria-label="Unsorted AI example cards"></div>
+
+<div class="zones">
+  <div class="zone" data-zone="rules" role="list" aria-label="Rule-Based Logic drop zone" tabindex="0">
+    <div class="zone-header">Rule-Based Logic</div>
+    <div class="zone-cards" id="zone-rules"></div>
+  </div>
+  <div class="zone" data-zone="data" role="list" aria-label="Learns from Data drop zone" tabindex="0">
+    <div class="zone-header">Learns from Data</div>
+    <div class="zone-cards" id="zone-data"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn btn-check" id="btn-check" onclick="checkAnswers()" disabled>Check Answers</button>
+  <button class="btn btn-reset" onclick="resetAll()">Reset</button>
+  <div class="status-line" id="status-line"></div>
+</div>
+
+<div class="reflection-box" id="reflection-box">
+  <strong>&#128161; Bring this to your classroom:</strong> This same sort works well as a warm-up with your own students. When AI naturally splits into "rule-based" and "learns from data," it gets a lot harder for students to treat "AI" as one single, all-powerful thing. Try asking them to name one more real-world example for each bucket before moving on, it's a quick way to check the distinction actually landed.
+</div>
+
+<script>
+const CARDS = [
+  {
+    id: 'chess',
+    title: 'Chess Engine',
+    category: 'rules',
+    fallback: '\uD83D\uDCF7 Add image: chess-engine',
+    imgSrc: 'PASTE_CHESS_ENGINE_IMAGE_URL_HERE',
+    alt: 'Illustration representing a chess engine',
+    reveal: 'A chess engine evaluates possible moves using programmed rules and search strategies mapped out in advance, not patterns learned from past games.'
+  },
+  {
+    id: 'thermostat',
+    title: 'Thermostat',
+    category: 'rules',
+    fallback: '\uD83D\uDCF7 Add image: thermostat',
+    imgSrc: 'PASTE_THERMOSTAT_IMAGE_URL_HERE',
+    alt: 'Illustration representing a smart thermostat',
+    reveal: 'A thermostat runs on a simple written rule: if the temperature drops below a set point, turn on the heat. No learning involved.'
+  },
+  {
+    id: 'chatbot',
+    title: 'Chatbot',
+    category: 'data',
+    fallback: '\uD83D\uDCF7 Add image: chatbot',
+    imgSrc: 'PASTE_CHATBOT_IMAGE_URL_HERE',
+    alt: 'Illustration representing a chatbot',
+    reveal: 'A chatbot is trained on huge amounts of text, learning to predict likely responses from patterns in that data, not from a fixed list of rules.'
+  },
+  {
+    id: 'recfeed',
+    title: 'Recommendation Feed',
+    category: 'data',
+    fallback: '\uD83D\uDCF7 Add image: recommendation-feed',
+    imgSrc: 'PASTE_RECOMMENDATION_FEED_IMAGE_URL_HERE',
+    alt: 'Illustration representing a video recommendation feed',
+    reveal: 'A recommendation feed learns your patterns, what you watch, click, or skip, to predict what you\u2019ll want to see next.'
+  }
+];
+
+let placed = {};        // id -> zone key ('rules' | 'data')
+let correct = {};        // id -> true once locked correct
+let selectedId = null;
+let draggedId = null;
+
+const bank = document.getElementById('bank');
+const zoneRules = document.getElementById('zone-rules');
+const zoneData = document.getElementById('zone-data');
+const btnCheck = document.getElementById('btn-check');
+const statusLine = document.getElementById('status-line');
+const liveRegion = document.getElementById('aria-live');
+
+function announce(msg) {
+  liveRegion.textContent = '';
+  setTimeout(() => { liveRegion.textContent = msg; }, 40);
+}
+
+function cardHTML(card) {
+  return `
+    <div class="card" id="card-${card.id}" draggable="true" role="listitem button" tabindex="0"
+      aria-label="${card.title}, not yet sorted. Press Enter to select."
+      ondragstart="onDragStart(event, '${card.id}')"
+      ondragend="onDragEnd(event)"
+      onclick="onCardClick('${card.id}')"
+      onkeydown="onCardKeydown(event, '${card.id}')">
+      <img class="card-img" src="${card.imgSrc}" alt="${card.alt}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="card-img-fallback">${card.fallback}</div>
+      <div class="card-title">${card.title}</div>
+      <div class="card-reveal">${card.reveal}</div>
+    </div>`;
+}
+
+function render() {
+  const bankCards = CARDS.filter(c => !placed[c.id]);
+  bank.innerHTML = bankCards.map(cardHTML).join('');
+
+  const rulesCards = CARDS.filter(c => placed[c.id] === 'rules');
+  const dataCards = CARDS.filter(c => placed[c.id] === 'data');
+
+  zoneRules.innerHTML = rulesCards.length
+    ? rulesCards.map(cardHTML).join('')
+    : '<div class="zone-empty-msg">Drop cards here</div>';
+  zoneData.innerHTML = dataCards.length
+    ? dataCards.map(cardHTML).join('')
+    : '<div class="zone-empty-msg">Drop cards here</div>';
+
+  CARDS.forEach(c => {
+    const el = document.getElementById('card-' + c.id);
+    if (!el) return;
+    if (c.id === selectedId) el.classList.add('selected');
+    if (correct[c.id]) {
+      el.classList.add('correct');
+      el.setAttribute('aria-label', c.title + ', correctly sorted.');
+      el.removeAttribute('draggable');
+    }
+  });
+
+  const placedCount = Object.keys(placed).length;
+  document.getElementById('progress-label').textContent = placedCount + ' of 4 sorted';
+  document.getElementById('progress-fill').style.width = (placedCount / 4 * 100) + '%';
+  document.getElementById('progress-bar').setAttribute('aria-valuenow', placedCount);
+
+  btnCheck.disabled = placedCount < 4;
+}
+
+/* ── Click / keyboard select-then-place ── */
+function onCardClick(id) {
+  if (correct[id]) return;
+  selectedId = (selectedId === id) ? null : id;
+  render();
+  if (selectedId) announce(CARDS.find(c => c.id === id).title + ' selected. Choose a zone to place it in.');
+}
+
+function onCardKeydown(e, id) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    onCardClick(id);
+  }
+}
+
+document.querySelectorAll('.zone').forEach(zoneEl => {
+  zoneEl.addEventListener('click', () => placeSelected(zoneEl.dataset.zone));
+  zoneEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      placeSelected(zoneEl.dataset.zone);
+    }
+  });
+  zoneEl.addEventListener('dragover', (e) => { e.preventDefault(); zoneEl.classList.add('drag-over'); });
+  zoneEl.addEventListener('dragleave', () => zoneEl.classList.remove('drag-over'));
+  zoneEl.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zoneEl.classList.remove('drag-over');
+    if (draggedId) placeCard(draggedId, zoneEl.dataset.zone);
+  });
+});
+
+function placeSelected(zoneKey) {
+  if (!selectedId) return;
+  placeCard(selectedId, zoneKey);
+  selectedId = null;
+}
+
+function placeCard(id, zoneKey) {
+  const card = CARDS.find(c => c.id === id);
+  placed[id] = zoneKey;
+  render();
+  const zoneName = zoneKey === 'rules' ? 'Rule-Based Logic' : 'Learns from Data';
+  announce(card.title + ' placed in ' + zoneName + '.');
+}
+
+/* ── Native drag (mouse) ── */
+function onDragStart(e, id) {
+  if (correct[id]) { e.preventDefault(); return; }
+  draggedId = id;
+  document.getElementById('card-' + id).classList.add('dragging');
+}
+function onDragEnd(e) {
+  const el = document.getElementById('card-' + draggedId);
+  if (el) el.classList.remove('dragging');
+  draggedId = null;
+}
+
+/* ── Check / Reset ── */
+function checkAnswers() {
+  let numCorrect = 0;
+  let numWrong = 0;
+  CARDS.forEach(c => {
+    if (correct[c.id]) { numCorrect++; return; }
+    if (placed[c.id] === c.category) {
+      correct[c.id] = true;
+      numCorrect++;
+    } else {
+      delete placed[c.id];
+      numWrong++;
+    }
+  });
+  render();
+
+  if (numWrong > 0) {
+    document.querySelectorAll('.card').forEach(el => {
+      if (!correct[el.id.replace('card-', '')] && bank.contains(el)) {
+        el.classList.add('shake');
+        setTimeout(() => el.classList.remove('shake'), 400);
+      }
+    });
+  }
+
+  const allDone = Object.keys(correct).length === CARDS.length;
+  statusLine.textContent = allDone
+    ? 'All sorted correctly!'
+    : numWrong + ' card' + (numWrong === 1 ? '' : 's') + ' returned to the bank, try again.';
+  announce(allDone
+    ? 'All four cards sorted correctly. Nice work.'
+    : numCorrect + ' correct so far. ' + numWrong + ' card' + (numWrong === 1 ? '' : 's') + ' sent back to the bank.');
+
+  document.getElementById('reflection-box').classList.toggle('show', allDone);
+}
+
+function resetAll() {
+  placed = {};
+  correct = {};
+  selectedId = null;
+  draggedId = null;
+  statusLine.textContent = '';
+  document.getElementById('reflection-box').classList.remove('show');
+  render();
+  announce('Sort reset. All cards back in the bank.');
+}
+
+render();
+</script>
+</body>
+</html>
