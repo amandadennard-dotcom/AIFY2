@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turing Test Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 15px;
+    background: #ffffff;
+    color: #1a1a1a;
+    padding: 1.25rem 1.5rem 2rem;
+    line-height: 1.5;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1F1976;
+    margin-bottom: 10px;
+  }
+
+  .directions {
+    background: #D5EFFF;
+    border-radius: 10px;
+    padding: 13px 16px;
+    margin-bottom: 1.5rem;
+    font-size: 13.5px;
+    color: #06338D;
+    line-height: 1.6;
+  }
+
+  .round-tracker {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1.25rem;
+  }
+  .round-dot {
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: #E4E2F8;
+    transition: background 0.3s;
+  }
+  .round-dot.done { background: #4C42CF; }
+  .round-dot.current { background: #ACA8EA; }
+
+  .round-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #4C42CF;
+    margin-bottom: 1rem;
+  }
+
+  .question-card {
+    background: #F5F4FD;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 1.25rem;
+  }
+  .question-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #4C42CF;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .question-text {
+    font-size: 15.5px;
+    font-weight: 600;
+    color: #1F1976;
+  }
+
+  .responses {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 1rem;
+  }
+  @media (max-width: 560px) {
+    .responses { grid-template-columns: 1fr; }
+  }
+
+  .response-card {
+    background: #ffffff;
+    border: 1.5px solid #E4E2F8;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  }
+  .response-card:hover:not(:disabled) {
+    border-color: #ACA8EA;
+    box-shadow: 0 4px 14px rgba(31,25,118,0.1);
+    transform: translateY(-2px);
+  }
+  .response-card:focus-visible {
+    outline: 3px solid #4C42CF;
+    outline-offset: 2px;
+  }
+  .response-card:disabled { cursor: default; }
+
+  .response-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  .response-text {
+    font-size: 13.5px;
+    color: #333;
+    line-height: 1.6;
+  }
+
+  .response-card.picked-correct {
+    border-color: #7CDB87;
+    background: #F2FBF3;
+  }
+  .response-card.picked-correct .response-label { color: #003F25; }
+  .response-card.picked-correct .response-label::after { content: " \2713 was AI"; }
+
+  .response-card.picked-wrong {
+    border-color: #FFA868;
+    background: #FFF7F0;
+  }
+  .response-card.picked-wrong .response-label { color: #611D00; }
+  .response-card.picked-wrong .response-label::after { content: " was human"; }
+
+  .response-card.correct-unpicked {
+    border-color: #7CDB87;
+  }
+  .response-card.correct-unpicked .response-label::after { content: " (this one was AI)"; color: #003F25; }
+
+  .reveal-box {
+    display: none;
+    background-color: #E4E2F8;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 1.25rem;
+    font-size: 14pt;
+    color: #222222;
+    line-height: 1.6;
+  }
+  .reveal-box.show { display: block; }
+  .reveal-box strong { color: #1F1976; }
+
+  .btn {
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 24px;
+    border: none;
+    cursor: pointer;
+    background: #4C42CF;
+    color: #fff;
+    transition: background 0.15s;
+  }
+  .btn:hover { background: #1F1976; }
+  .btn:focus-visible { outline: 3px solid #ACA8EA; outline-offset: 2px; }
+
+  .summary {
+    text-align: center;
+  }
+  .summary-score {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 40px;
+    font-weight: 700;
+    color: #4C42CF;
+    margin: 0.5rem 0;
+  }
+  .summary-note {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 1.5rem;
+  }
+  .reflection-box {
+    background-color: #D5EFFF;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 1.5rem;
+    text-align: left;
+    font-size: 14pt;
+    color: #06338D;
+    line-height: 1.6;
+  }
+
+  .sr-live {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .response-card, .round-dot { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="aria-live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
+
+<h1>Turing Test Simulator</h1>
+
+<div class="directions" role="note">
+  <strong>How this works:</strong> For each round, read the question and two responses. Click the one you think was written by AI. Then see the reveal, along with a note on what that reveal actually proves (and doesn't).
+</div>
+
+<div id="round-tracker" class="round-tracker"></div>
+
+<div id="game-area"></div>
+<div id="summary-area" style="display:none;"></div>
+
+<script>
+const ROUNDS = [
+  {
+    question: "What's your favorite way to spend a rainy afternoon?",
+    responses: [
+      { text: "I like reading a good mystery novel with a cup of tea nearby, though I usually end up guessing the ending too early.", isAI: false },
+      { text: "A rainy afternoon offers an excellent opportunity for indoor activities such as reading, journaling, or organizing a collection. Each provides a calming, low-energy pursuit.", isAI: true }
+    ],
+    reveal: "The second response is the AI-generated one. Notice how it lists options rather than committing to one, and skips the kind of small, slightly self-deprecating detail (guessing the ending too early) that people tend to include without thinking about it."
+  },
+  {
+    question: "Describe your morning routine in one sentence.",
+    responses: [
+      { text: "I roll out of bed, trip over my dog, and somehow still make it to coffee before my brain turns on.", isAI: false },
+      { text: "Each morning, I wake at a consistent time, complete a series of preparatory tasks, and begin my day with focus and intention.", isAI: true }
+    ],
+    reveal: "The second response is the AI-generated one again. Real routines are messy and specific; tripping over a dog is oddly specific in a way that's hard to invent convincingly. AI responses often default to smooth, generalized phrasing instead."
+  },
+  {
+    question: "What's one thing you wish more people understood?",
+    responses: [
+      { text: "That it is important to consider multiple perspectives before forming a conclusion, as this fosters more balanced and informed decision-making.", isAI: true },
+      { text: "That being quiet in a group doesn't mean I have nothing to say. Sometimes I just need a second to catch up before I jump in.", isAI: false }
+    ],
+    reveal: "This time, the first response is the AI-generated one. If you guessed based on \u201cformal-sounding equals AI,\u201d this round was built to trip that up: sounding general or polished isn't actually a reliable tell on its own. That's exactly the problem the Turing Test runs into. AI can sound emotionally specific, and people can sound generic, and neither tells you what's actually happening underneath."
+  }
+];
+
+let currentRound = 0;
+let score = 0;
+let answered = false;
+
+const gameArea = document.getElementById('game-area');
+const summaryArea = document.getElementById('summary-area');
+const tracker = document.getElementById('round-tracker');
+const liveRegion = document.getElementById('aria-live');
+
+function announce(msg) {
+  liveRegion.textContent = '';
+  setTimeout(() => { liveRegion.textContent = msg; }, 40);
+}
+
+function renderTracker() {
+  tracker.innerHTML = ROUNDS.map((_, i) => {
+    let cls = 'round-dot';
+    if (i < currentRound) cls += ' done';
+    else if (i === currentRound) cls += ' current';
+    return `<div class="${cls}" aria-hidden="true"></div>`;
+  }).join('');
+}
+
+function renderRound() {
+  answered = false;
+  const round = ROUNDS[currentRound];
+  renderTracker();
+
+  gameArea.innerHTML = `
+    <div class="round-label">Round ${currentRound + 1} of ${ROUNDS.length}</div>
+    <div class="question-card">
+      <div class="question-label">The question they both answered</div>
+      <div class="question-text">${round.question}</div>
+    </div>
+    <div class="responses" id="responses" role="group" aria-label="Choose which response was written by AI">
+      <button class="response-card" id="resp-0" onclick="pickResponse(0)">
+        <div class="response-label">Response A</div>
+        <div class="response-text">${round.responses[0].text}</div>
+      </button>
+      <button class="response-card" id="resp-1" onclick="pickResponse(1)">
+        <div class="response-label">Response B</div>
+        <div class="response-text">${round.responses[1].text}</div>
+      </button>
+    </div>
+    <div class="reveal-box" id="reveal-box">
+      <strong>&#128161; What this actually shows:</strong> ${round.reveal}
+    </div>
+    <button class="btn" id="btn-next" style="display:none;" onclick="nextRound()">
+      ${currentRound < ROUNDS.length - 1 ? 'Next Round \u2192' : 'See Results \u2192'}
+    </button>
+  `;
+  announce('Round ' + (currentRound + 1) + '. ' + round.question);
+}
+
+function pickResponse(idx) {
+  if (answered) return;
+  answered = true;
+  const round = ROUNDS[currentRound];
+  const picked = round.responses[idx];
+  const other = round.responses[1 - idx];
+  const isCorrect = picked.isAI === true;
+  if (isCorrect) score++;
+
+  document.getElementById('resp-' + idx).classList.add(isCorrect ? 'picked-correct' : 'picked-wrong');
+  document.getElementById('resp-' + idx).disabled = true;
+  const otherIdx = 1 - idx;
+  document.getElementById('resp-' + otherIdx).disabled = true;
+  if (!isCorrect) {
+    document.getElementById('resp-' + otherIdx).classList.add('correct-unpicked');
+  }
+
+  document.getElementById('reveal-box').classList.add('show');
+  document.getElementById('btn-next').style.display = 'inline-block';
+
+  announce((isCorrect ? 'Correct.' : 'Not quite.') + ' ' + round.reveal);
+}
+
+function nextRound() {
+  currentRound++;
+  if (currentRound >= ROUNDS.length) {
+    showSummary();
+  } else {
+    renderRound();
+  }
+}
+
+function showSummary() {
+  renderTracker();
+  gameArea.style.display = 'none';
+  summaryArea.style.display = 'block';
+  summaryArea.innerHTML = `
+    <div class="summary">
+      <div style="font-size:13px; color:#666; text-transform:uppercase; letter-spacing:0.04em; font-weight:700;">Your score</div>
+      <div class="summary-score">${score} / ${ROUNDS.length}</div>
+      <div class="summary-note">correctly identified as AI-generated</div>
+    </div>
+    <div class="reflection-box">
+      However you scored, that's exactly Turing's point: this test only measures whether you were fooled, not whether either response was actually "thinking." A high score tells you that you're good at spotting patterns in this kind of writing right now, not that you've settled what intelligence is. Consider bringing this same distinction into your classroom debate: passing the test and possessing intelligence are two different claims, even when a response passes convincingly.
+    </div>
+    <button class="btn" onclick="restart()">Try Again</button>
+  `;
+  announce('Simulation complete. You scored ' + score + ' out of ' + ROUNDS.length + '.');
+}
+
+function restart() {
+  currentRound = 0;
+  score = 0;
+  gameArea.style.display = 'block';
+  summaryArea.style.display = 'none';
+  renderRound();
+  announce('Simulator restarted.');
+}
+
+renderRound();
+</script>
+</body>
+</html>
