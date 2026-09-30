@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading Python Line by Line</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Geist:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 15px;
+    background: #ffffff;
+    color: #1a1a1a;
+    padding: 1.25rem 1.5rem 2rem;
+    line-height: 1.5;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: #1F1976;
+    margin-bottom: 10px;
+  }
+
+  .directions {
+    background: #D5EFFF;
+    border-radius: 10px;
+    padding: 13px 16px;
+    margin-bottom: 1.25rem;
+    font-size: 13.5px;
+    color: #06338D;
+    line-height: 1.6;
+  }
+
+  /* ── Stage tracker ── */
+  .stage-tracker {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .stage-dot {
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: #E4E2F8;
+    transition: background 0.3s;
+  }
+  .stage-dot.done { background: #4C42CF; }
+  .stage-dot.current { background: #ACA8EA; }
+  .stage-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #4C42CF;
+    margin-bottom: 1rem;
+  }
+
+  /* ── Code block ── */
+  .code-block {
+    background: #1F1976;
+    border-radius: 10px;
+    padding: 16px 18px;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 14.5px;
+    color: #E4E2F8;
+    margin-bottom: 14px;
+    line-height: 2;
+    white-space: pre;
+  }
+
+  .tok {
+    cursor: pointer;
+    border-bottom: 2px dotted #7A74C4;
+    border-radius: 3px;
+    padding: 1px 2px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .tok:hover { background: rgba(255,255,255,0.12); }
+  .tok:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 1px;
+  }
+  .tok.clicked {
+    background: #4C42CF;
+    color: #ffffff;
+    border-bottom-color: transparent;
+    font-weight: 600;
+  }
+  .tok.clicked::after {
+    content: " \2713";
+    font-size: 11px;
+  }
+
+  /* ── Label reveal list ── */
+  .labels-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    min-height: 4px;
+  }
+  .label-card {
+    background: #F5F4FD;
+    border-left: 3px solid #4C42CF;
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-size: 13px;
+    color: #1F1976;
+    line-height: 1.5;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  .label-card.show { opacity: 1; transform: translateY(0); }
+  .label-card strong { color: #1F1976; }
+
+  .hint {
+    font-size: 12px;
+    color: #999;
+    font-style: italic;
+    margin-bottom: 16px;
+  }
+
+  /* ── Console ── */
+  .console-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6c7086;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .console {
+    background: #11111b;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    color: #6c7086;
+    min-height: 44px;
+    margin-bottom: 18px;
+    line-height: 1.6;
+  }
+  .console .out { color: #a6e3a1; }
+  .console .empty-note { color: #6c7086; font-style: italic; }
+
+  /* ── Buttons ── */
+  .controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .btn {
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 22px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  .btn-run {
+    background: #4C42CF;
+    color: #fff;
+  }
+  .btn-run:hover:not(:disabled) { background: #1F1976; }
+  .btn-run:disabled { background: #ACA8EA; cursor: not-allowed; opacity: 0.6; }
+  .btn-next {
+    background: none;
+    color: #4C42CF;
+    border: 1.5px solid #E4E2F8;
+    display: none;
+  }
+  .btn-next.show { display: inline-block; }
+  .btn-next:hover { background: #F5F4FD; }
+  .btn:focus-visible { outline: 3px solid #ACA8EA; outline-offset: 2px; }
+
+  .reset-wrap { margin-top: 1.5rem; text-align: right; }
+  .reset-btn {
+    font-size: 12.5px;
+    color: #4C42CF;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+    text-decoration: underline;
+    padding: 0;
+  }
+  .reset-btn:hover { color: #1F1976; }
+  .reset-btn:focus-visible { outline: 2px solid #ACA8EA; border-radius: 2px; }
+
+  .summary-box {
+    background-color: #D5EFFF;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-top: 1rem;
+    font-size: 14px;
+    color: #06338D;
+    line-height: 1.6;
+  }
+
+  .sr-live {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .label-card, .stage-dot, .btn { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="aria-live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
+
+<h1>Reading Python Line by Line</h1>
+
+<div class="directions" role="note">
+  <strong>How this works:</strong> Click each highlighted part of the code to see what it does. Once every part in a stage is labeled, press Run to see the actual console output.
+</div>
+
+<div class="stage-tracker" id="stage-tracker" aria-hidden="true"></div>
+<div class="stage-label" id="stage-label"></div>
+
+<div id="stage-area"></div>
+
+<div class="reset-wrap"><button class="reset-btn" onclick="resetAll()">Reset</button></div>
+
+<script>
+const STAGES = [
+  {
+    title: 'Stage 1 of 3: Printing Text',
+    code: [
+      { text: 'print', tokenId: 'print1', label: '<strong>Function call:</strong> print() tells Python to display something in the console.' },
+      { text: '(' },
+      { text: '"Good morning!"', tokenId: 'string1', label: '<strong>Argument:</strong> the text being printed, written inside quotation marks.' },
+      { text: ')' }
+    ],
+    consoleOutput: 'Good morning!'
+  },
+  {
+    title: 'Stage 2 of 3: Storing a Value',
+    code: [
+      { text: 'posts', tokenId: 'varname2', label: '<strong>Variable name:</strong> posts. A name the student chose to store a value under.' },
+      { text: ' = ', tokenId: 'assign2', label: '<strong>Assignment operator:</strong> stores the value on the right into the variable on the left.' },
+      { text: '31', tokenId: 'value2', label: '<strong>Value:</strong> 31. The actual data being stored inside posts.' }
+    ],
+    consoleOutput: null,
+    consoleNote: 'Assigning a value doesn\u2019t display anything on its own.'
+  },
+  {
+    title: 'Stage 3 of 3: Printing a Variable',
+    code: [
+      { text: 'posts = 31', tokenId: 'recap3', label: '<strong>Recap:</strong> same assignment as Stage 2, posts now holds 31.' },
+      { text: '\n' },
+      { text: 'print', tokenId: 'print3', label: '<strong>Function call:</strong> print() again, this time given a variable instead of a string.' },
+      { text: '(' },
+      { text: 'posts', tokenId: 'read3', label: '<strong>Variable read:</strong> no quotation marks this time. Python looks up the value stored in posts instead of printing the word "posts".' },
+      { text: ')' }
+    ],
+    consoleOutput: '31'
+  }
+];
+
+let current = 0;
+let clickedTokens = {};
+let hasRun = {};
+
+const stageArea = document.getElementById('stage-area');
+const tracker = document.getElementById('stage-tracker');
+const stageLabelEl = document.getElementById('stage-label');
+const liveRegion = document.getElementById('aria-live');
+
+function announce(msg) {
+  liveRegion.textContent = '';
+  setTimeout(() => { liveRegion.textContent = msg; }, 40);
+}
+
+function renderTracker() {
+  tracker.innerHTML = STAGES.map((_, i) => {
+    let cls = 'stage-dot';
+    if (i < current) cls += ' done';
+    else if (i === current) cls += ' current';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+  stageLabelEl.textContent = STAGES[current].title;
+}
+
+function codeTokens(stage) {
+  return stage.code.filter(c => c.tokenId);
+}
+
+function renderStage() {
+  const stage = STAGES[current];
+  clickedTokens[current] = clickedTokens[current] || {};
+  hasRun[current] = hasRun[current] || false;
+  renderTracker();
+
+  const codeHTML = stage.code.map(c => {
+    if (!c.tokenId) return escapeHTML(c.text);
+    const isClicked = clickedTokens[current][c.tokenId];
+    return `<span class="tok${isClicked ? ' clicked' : ''}" id="tok-${c.tokenId}" role="button" tabindex="0"
+      aria-label="${stripTags(c.label)}"
+      onclick="clickToken('${c.tokenId}')"
+      onkeydown="tokenKeydown(event, '${c.tokenId}')">${escapeHTML(c.text)}</span>`;
+  }).join('');
+
+  const tokens = codeTokens(stage);
+  const allClicked = tokens.every(t => clickedTokens[current][t.tokenId]);
+
+  const labelsHTML = tokens.map(t => {
+    const shown = clickedTokens[current][t.tokenId];
+    return `<div class="label-card${shown ? ' show' : ''}">${t.label}</div>`;
+  }).join('');
+
+  let consoleHTML;
+  if (!hasRun[current]) {
+    consoleHTML = '<span class="empty-note">not run yet</span>';
+  } else if (stage.consoleOutput) {
+    consoleHTML = '<span class="out">' + escapeHTML(stage.consoleOutput) + '</span>';
+  } else {
+    consoleHTML = '<span class="empty-note">(no output) ' + escapeHTML(stage.consoleNote || '') + '</span>';
+  }
+
+  const isLastStage = current === STAGES.length - 1;
+
+  stageArea.innerHTML = `
+    <div class="code-block" role="img" aria-label="Python code for ${stage.title}">${codeHTML}</div>
+    <div class="labels-wrap">${labelsHTML}</div>
+    ${!allClicked ? '<div class="hint">Click every highlighted part above to unlock Run.</div>' : ''}
+    <div class="console-label">&#9656; Console</div>
+    <div class="console" id="console-box">${consoleHTML}</div>
+    <div class="controls">
+      <button class="btn btn-run" id="btn-run" onclick="runStage()" ${allClicked ? '' : 'disabled'}>Run</button>
+      <button class="btn btn-next ${hasRun[current] ? 'show' : ''}" id="btn-next" onclick="nextStage()">
+        ${isLastStage ? 'See Summary \u2192' : 'Next Stage \u2192'}
+      </button>
+    </div>
+  `;
+}
+
+function escapeHTML(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function stripTags(s) {
+  return s.replace(/<[^>]*>/g, '');
+}
+
+function clickToken(tokenId) {
+  clickedTokens[current][tokenId] = true;
+  renderStage();
+  const stage = STAGES[current];
+  const tok = stage.code.find(c => c.tokenId === tokenId);
+  announce(stripTags(tok.label));
+}
+
+function tokenKeydown(e, tokenId) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    clickToken(tokenId);
+  }
+}
+
+function runStage() {
+  hasRun[current] = true;
+  renderStage();
+  const stage = STAGES[current];
+  const msg = stage.consoleOutput
+    ? 'Console output: ' + stage.consoleOutput
+    : 'No console output. ' + (stage.consoleNote || '');
+  announce(msg);
+  document.getElementById('btn-next').focus();
+}
+
+function nextStage() {
+  if (current < STAGES.length - 1) {
+    current++;
+    renderStage();
+    announce(STAGES[current].title);
+  } else {
+    showSummary();
+  }
+}
+
+function showSummary() {
+  stageArea.innerHTML = `
+    <div class="summary-box">
+      <strong>&#128161; The throughline:</strong> Stage 2 produced no console output at all, assigning a value to a variable is a separate step from displaying it. Stage 3 shows why both matter together: store it first, then print it when you want to see it. That two-step habit, assign, then print, is exactly what students will build on once they start writing their own chatbot code.
+    </div>
+    <div class="controls" style="margin-top: 1rem;">
+      <button class="btn btn-run" onclick="resetAll()">Start Over</button>
+    </div>
+  `;
+  tracker.innerHTML = STAGES.map(() => '<div class="stage-dot done"></div>').join('');
+  stageLabelEl.textContent = 'Complete';
+  announce('All three stages complete.');
+}
+
+function resetAll() {
+  current = 0;
+  clickedTokens = {};
+  hasRun = {};
+  renderStage();
+  announce('Reset to Stage 1.');
+}
+
+renderStage();
+</script>
+</body>
+</html>
