@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stepping Through a For Loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Geist:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 16px;
+    background: #ffffff;
+    color: #1a1a1a;
+    padding: 1.25rem 1.5rem 2rem;
+    line-height: 1.5;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: #1F1976;
+    margin-bottom: 10px;
+  }
+
+  .directions {
+    background: #D5EFFF;
+    border-radius: 10px;
+    padding: 13px 16px;
+    margin-bottom: 1.25rem;
+    font-size: 16px;
+    color: #06338D;
+    line-height: 1.6;
+  }
+
+  .step-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #4C42CF;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  .layout {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .code-col {
+    flex: 1;
+    min-width: 260px;
+  }
+
+  .code-block {
+    background: #1F1976;
+    border-radius: 10px;
+    padding: 16px 18px;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 16px;
+    color: #E4E2F8;
+    line-height: 2;
+  }
+
+  .code-line {
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background 0.25s;
+    white-space: pre;
+  }
+  .code-line.active {
+    background: #4C42CF;
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .side-col {
+    width: 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .i-tracker {
+    background: #F5F4FD;
+    border: 1.5px solid #E4E2F8;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+  }
+  .i-tracker-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #4C42CF;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .i-tracker-value {
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1F1976;
+  }
+  .i-tracker-value.empty { color: #ACA8EA; font-size: 14px; font-weight: 500; }
+
+  .console-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6c7086;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .console {
+    background: #11111b;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 15px;
+    color: #a6e3a1;
+    min-height: 140px;
+    line-height: 1.7;
+  }
+  .console .empty-note { color: #6c7086; font-style: italic; font-size: 13px; }
+
+  .status-line {
+    background: #F7F7FB;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 16px;
+    color: #222222;
+    line-height: 1.5;
+    margin-bottom: 18px;
+    min-height: 54px;
+  }
+  .status-line strong { color: #1F1976; }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 22px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  .btn-prev {
+    background: none;
+    color: #4C42CF;
+    border: 1.5px solid #E4E2F8;
+  }
+  .btn-prev:hover:not(:disabled) { background: #F5F4FD; }
+  .btn-prev:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-next {
+    background: #4C42CF;
+    color: #fff;
+  }
+  .btn-next:hover:not(:disabled) { background: #1F1976; }
+  .btn-next:disabled { background: #ACA8EA; cursor: not-allowed; opacity: 0.6; }
+  .btn:focus-visible { outline: 3px solid #ACA8EA; outline-offset: 2px; }
+
+  .reset-wrap { margin-top: 1.25rem; text-align: right; }
+  .reset-btn {
+    font-size: 13px;
+    color: #4C42CF;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+    text-decoration: underline;
+    padding: 0;
+  }
+  .reset-btn:hover { color: #1F1976; }
+  .reset-btn:focus-visible { outline: 2px solid #ACA8EA; border-radius: 2px; }
+
+  .summary-box {
+    background-color: #D5EFFF;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-top: 1rem;
+    font-size: 16px;
+    color: #06338D;
+    line-height: 1.6;
+  }
+
+  .sr-live {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .code-line, .btn { transition: none !important; }
+  }
+
+  @media (max-width: 480px) {
+    .layout { flex-direction: column; }
+    .side-col { width: 100%; flex-direction: row; }
+    .i-tracker { flex: 1; }
+    .console { flex: 2; }
+  }
+</style>
+</head>
+<body>
+
+<div id="aria-live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
+
+<h1>Stepping Through a For Loop</h1>
+
+<div class="directions" role="note">
+  <strong>How this works:</strong> Press Next to watch this loop run one step at a time, the same way it's traced in Lesson 7. Watch how i changes and how the console fills in.
+</div>
+
+<div class="step-label" id="step-label"></div>
+
+<div class="layout">
+  <div class="code-col">
+    <div class="code-block" role="img" aria-label="for i in range 5, colon, indented print of f string Day, open brace i close brace">
+      <div class="code-line" id="line-for">for i in range(5):</div>
+      <div class="code-line" id="line-print">&nbsp;&nbsp;print(f"Day {i}")</div>
+    </div>
+  </div>
+  <div class="side-col">
+    <div class="i-tracker">
+      <div class="i-tracker-label">i</div>
+      <div class="i-tracker-value" id="i-value">not set</div>
+    </div>
+  </div>
+</div>
+
+<div class="console-label">&#9656; Console</div>
+<div class="console" id="console-box"><span class="empty-note">not run yet</span></div>
+
+<div class="status-line" id="status-line" style="margin-top: 16px;"></div>
+
+<div class="controls">
+  <button class="btn btn-prev" id="btn-prev" onclick="prevStep()" disabled>&larr; Back</button>
+  <button class="btn btn-next" id="btn-next" onclick="nextStep()">Next &rarr;</button>
+</div>
+
+<div class="reset-wrap"><button class="reset-btn" onclick="resetAll()">Reset</button></div>
+
+<div id="summary-area"></div>
+
+<script>
+// Build the step sequence: for each i in range(5), a "line-for" step then a "line-print" step, then a final "loop ends" step.
+const STEPS = [];
+for (let i = 0; i < 5; i++) {
+  STEPS.push({
+    line: 'line-for',
+    iValue: i,
+    status: `Python checks range(5) for a next value. It gives <strong>i = ${i}</strong>.`
+  });
+  STEPS.push({
+    line: 'line-print',
+    iValue: i,
+    status: `The indented line runs with <strong>i = ${i}</strong>, printing <strong>"Day ${i}"</strong> to the console.`,
+    output: `Day ${i}`
+  });
+}
+STEPS.push({
+  line: 'line-for',
+  iValue: null,
+  status: `Python checks range(5) again. There's no value left to give, so the loop ends.`
+});
+
+let current = -1; // -1 = not started
+let printedLines = [];
+
+const liveRegion = document.getElementById('aria-live');
+const stepLabel = document.getElementById('step-label');
+const iValueEl = document.getElementById('i-value');
+const consoleBox = document.getElementById('console-box');
+const statusLine = document.getElementById('status-line');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+
+function announce(msg) {
+  liveRegion.textContent = '';
+  setTimeout(() => { liveRegion.textContent = msg; }, 40);
+}
+
+function stripTags(s) { return s.replace(/<[^>]*>/g, ''); }
+
+function render() {
+  document.getElementById('line-for').classList.remove('active');
+  document.getElementById('line-print').classList.remove('active');
+
+  if (current === -1) {
+    stepLabel.textContent = 'Press Next to begin';
+    iValueEl.textContent = 'not set';
+    iValueEl.classList.add('empty');
+    consoleBox.innerHTML = '<span class="empty-note">not run yet</span>';
+    statusLine.innerHTML = 'This loop will run 5 times, once for each value range(5) produces: 0, 1, 2, 3, 4.';
+    btnPrev.disabled = true;
+    btnNext.disabled = false;
+    btnNext.textContent = 'Next \u2192';
+    return;
+  }
+
+  const step = STEPS[current];
+  document.getElementById(step.line).classList.add('active');
+
+  stepLabel.textContent = `Step ${current + 1} of ${STEPS.length}`;
+
+  if (step.iValue === null) {
+    iValueEl.textContent = 'exhausted';
+    iValueEl.classList.add('empty');
+  } else {
+    iValueEl.textContent = step.iValue;
+    iValueEl.classList.remove('empty');
+  }
+
+  consoleBox.innerHTML = printedLines.length
+    ? printedLines.join('<br>')
+    : '<span class="empty-note">not run yet</span>';
+
+  statusLine.innerHTML = step.status;
+
+  btnPrev.disabled = false;
+  const isLast = current === STEPS.length - 1;
+  btnNext.disabled = isLast;
+  btnNext.textContent = isLast ? 'Done' : 'Next \u2192';
+
+  if (isLast) showSummary();
+}
+
+function nextStep() {
+  if (current >= STEPS.length - 1) return;
+  current++;
+  const step = STEPS[current];
+  if (step.output) printedLines.push(step.output);
+  render();
+  announce(stripTags(STEPS[current].status));
+}
+
+function prevStep() {
+  if (current <= -1) return;
+  const step = STEPS[current];
+  if (step.output) printedLines.pop();
+  current--;
+  render();
+  announce(current === -1 ? 'Back to the start.' : stripTags(STEPS[current].status));
+}
+
+function showSummary() {
+  document.getElementById('summary-area').innerHTML = `
+    <div class="summary-box">
+      <strong>&#128161; What just happened:</strong> the loop checked range(5) six times total, five times it got a value (0 through 4) and ran the print line, the sixth time there was nothing left, so it stopped. That's why the loop runs exactly 5 times even though you never see a number 5 printed.
+    </div>
+  `;
+  announce('Loop complete. Five iterations ran.');
+}
+
+function resetAll() {
+  current = -1;
+  printedLines = [];
+  document.getElementById('summary-area').innerHTML = '';
+  render();
+  announce('Reset to the start.');
+}
+
+render();
+</script>
+</body>
+</html>
