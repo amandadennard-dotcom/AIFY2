@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tracing a Decision Tree</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Geist:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 16px;
+    background: #ffffff;
+    color: #1a1a1a;
+    padding: 1.25rem 1.5rem 2rem;
+    line-height: 1.5;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: #1F1976;
+    margin-bottom: 10px;
+  }
+
+  .directions {
+    background: #D5EFFF;
+    border-radius: 10px;
+    padding: 13px 16px;
+    margin-bottom: 1.25rem;
+    font-size: 16px;
+    color: #06338D;
+    line-height: 1.6;
+  }
+
+  .progress-wrap { margin-bottom: 1rem; }
+  .progress-label { font-size: 13px; font-weight: 700; color: #4C42CF; margin-bottom: 6px; }
+  .path-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .path-chip {
+    font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+    background: #E4E2F8; color: #7A74C4; border: 1.5px solid #E4E2F8;
+  }
+  .path-chip.done { background: #CCF1D0; color: #003F25; border-color: #CCF1D0; }
+
+  .breadcrumb {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 1rem;
+    min-height: 20px;
+  }
+  .breadcrumb strong { color: #1F1976; }
+
+  .layout {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  .question-col {
+    flex: 1;
+    min-width: 240px;
+  }
+
+  .question-card {
+    background: #F5F4FD;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .question-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1F1976;
+    margin-bottom: 16px;
+  }
+  .answer-btns { display: flex; gap: 10px; justify-content: center; }
+  .btn-answer {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 24px;
+    border: 1.5px solid #4C42CF;
+    background: #ffffff;
+    color: #4C42CF;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btn-answer:hover { background: #4C42CF; color: #ffffff; }
+  .btn-answer:focus-visible { outline: 3px solid #ACA8EA; outline-offset: 2px; }
+
+  .result-card {
+    background: #CCF1D0;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .result-label { font-size: 12px; font-weight: 700; color: #003F25; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .result-text { font-size: 20px; font-weight: 700; color: #003F25; }
+
+  .code-col {
+    flex: 1;
+    min-width: 240px;
+  }
+
+  .code-block {
+    background: #1F1976;
+    border-radius: 10px;
+    padding: 16px 18px;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 15px;
+    color: #6c6a9e;
+    line-height: 1.9;
+  }
+  .code-line { transition: color 0.25s, background 0.25s; padding: 1px 4px; border-radius: 3px; }
+  .code-line.active { color: #ffffff; background: rgba(255,255,255,0.14); font-weight: 600; }
+
+  .controls { margin-top: 1.5rem; text-align: center; }
+  .btn-reset {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 22px;
+    border: none;
+    background: #4C42CF;
+    color: #fff;
+    cursor: pointer;
+  }
+  .btn-reset:hover { background: #1F1976; }
+  .btn-reset:focus-visible { outline: 3px solid #ACA8EA; outline-offset: 2px; }
+
+  .complete-note {
+    background-color: #D5EFFF;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-top: 1.25rem;
+    font-size: 16px;
+    color: #06338D;
+    line-height: 1.6;
+  }
+
+  .sr-live {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .code-line, .btn-answer { transition: none !important; }
+  }
+
+  @media (max-width: 560px) {
+    .layout { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div id="aria-live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
+
+<h1>Tracing a Decision Tree</h1>
+
+<div class="directions" role="note">
+  <strong>How this works:</strong> Answer each question. The matching line of code highlights as you go. Try all four paths before you're done.
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-label" id="progress-label">0 of 4 paths explored</div>
+  <div class="path-chips" id="path-chips"></div>
+</div>
+
+<div class="breadcrumb" id="breadcrumb">&nbsp;</div>
+
+<div class="layout">
+  <div class="question-col" id="question-col"></div>
+  <div class="code-col">
+    <div class="code-block" role="img" aria-label="Nested if else code implementing the fever and cough decision tree">
+      <div class="code-line" id="l-if-fever">if fever:</div>
+      <div class="code-line" id="l-if-cough-1">&nbsp;&nbsp;if cough:</div>
+      <div class="code-line" id="l-return-clinic">&nbsp;&nbsp;&nbsp;&nbsp;return "Visit clinic"</div>
+      <div class="code-line" id="l-else-1">&nbsp;&nbsp;else:</div>
+      <div class="code-line" id="l-return-rest">&nbsp;&nbsp;&nbsp;&nbsp;return "Get rest"</div>
+      <div class="code-line" id="l-else-fever">else:</div>
+      <div class="code-line" id="l-if-cough-2">&nbsp;&nbsp;if cough:</div>
+      <div class="code-line" id="l-return-medicine">&nbsp;&nbsp;&nbsp;&nbsp;return "Take cough medicine"</div>
+      <div class="code-line" id="l-else-2">&nbsp;&nbsp;else:</div>
+      <div class="code-line" id="l-return-hydrate">&nbsp;&nbsp;&nbsp;&nbsp;return "Hydrate"</div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn-reset" onclick="resetAll()">Start Over</button>
+</div>
+
+<div id="complete-area"></div>
+
+<script>
+const PATHS = {
+  'yes-yes': { label: 'Fever + Cough', result: 'Visit clinic', lines: ['l-if-fever','l-if-cough-1','l-return-clinic'] },
+  'yes-no':  { label: 'Fever + No Cough', result: 'Get rest', lines: ['l-if-fever','l-if-cough-1','l-else-1','l-return-rest'] },
+  'no-yes':  { label: 'No Fever + Cough', result: 'Take cough medicine', lines: ['l-else-fever','l-if-cough-2','l-return-medicine'] },
+  'no-no':   { label: 'No Fever + No Cough', result: 'Hydrate', lines: ['l-else-fever','l-if-cough-2','l-else-2','l-return-hydrate'] }
+};
+
+let fever = null; // 'yes' | 'no' | null
+let cough = null;
+let explored = {};
+
+const liveRegion = document.getElementById('aria-live');
+const questionCol = document.getElementById('question-col');
+const breadcrumb = document.getElementById('breadcrumb');
+
+function announce(msg) {
+  liveRegion.textContent = '';
+  setTimeout(() => { liveRegion.textContent = msg; }, 40);
+}
+
+function clearHighlights() {
+  document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+}
+
+function renderChips() {
+  const chips = Object.entries(PATHS).map(([key, p]) => {
+    const done = explored[key] ? ' done' : '';
+    return `<div class="path-chip${done}">${p.label}</div>`;
+  }).join('');
+  document.getElementById('path-chips').innerHTML = chips;
+  document.getElementById('progress-label').textContent = Object.keys(explored).length + ' of 4 paths explored';
+}
+
+function renderBreadcrumb() {
+  let text = '';
+  if (fever !== null) text += 'Fever: <strong>' + (fever === 'yes' ? 'Yes' : 'No') + '</strong>';
+  if (cough !== null) text += '  &rarr;  Cough: <strong>' + (cough === 'yes' ? 'Yes' : 'No') + '</strong>';
+  breadcrumb.innerHTML = text || '&nbsp;';
+}
+
+function renderQuestion() {
+  clearHighlights();
+  renderBreadcrumb();
+
+  if (fever === null) {
+    questionCol.innerHTML = `
+      <div class="question-card">
+        <div class="question-text">Does the patient have a fever?</div>
+        <div class="answer-btns">
+          <button class="btn-answer" onclick="answerFever('yes')">Yes</button>
+          <button class="btn-answer" onclick="answerFever('no')">No</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (fever === 'yes') document.getElementById('l-if-fever').classList.add('active');
+  else document.getElementById('l-else-fever').classList.add('active');
+
+  if (cough === null) {
+    questionCol.innerHTML = `
+      <div class="question-card">
+        <div class="question-text">Does the patient have a cough?</div>
+        <div class="answer-btns">
+          <button class="btn-answer" onclick="answerCough('yes')">Yes</button>
+          <button class="btn-answer" onclick="answerCough('no')">No</button>
+        </div>
+      </div>`;
+    if (fever === 'yes') document.getElementById('l-if-cough-1').classList.add('active');
+    else document.getElementById('l-if-cough-2').classList.add('active');
+    return;
+  }
+
+  // Both answered: show result
+  const key = fever + '-' + cough;
+  const path = PATHS[key];
+  path.lines.forEach(id => document.getElementById(id).classList.add('active'));
+
+  questionCol.innerHTML = `
+    <div class="result-card">
+      <div class="result-label">Conclusion</div>
+      <div class="result-text">${path.result}</div>
+    </div>`;
+
+  if (!explored[key]) {
+    explored[key] = true;
+    renderChips();
+    if (Object.keys(explored).length === 4) showComplete();
+  }
+
+  announce('Conclusion: ' + path.result);
+}
+
+function answerFever(val) {
+  fever = val;
+  renderQuestion();
+  announce('Fever: ' + (val === 'yes' ? 'yes' : 'no') + '. ' + (val === 'yes' ? 'Does the patient have a cough?' : 'Does the patient have a cough?'));
+}
+
+function answerCough(val) {
+  cough = val;
+  renderQuestion();
+}
+
+function resetAll() {
+  fever = null;
+  cough = null;
+  renderQuestion();
+  announce('Reset. Starting a new path.');
+}
+
+function showComplete() {
+  document.getElementById('complete-area').innerHTML = `
+    <div class="complete-note">
+      <strong>&#128161; All four paths explored.</strong> Notice each path lit up a different stretch of the same code, two questions, four possible endings, same structure as the tree itself. That's the whole translation: every branch point becomes an if/else, every leaf becomes a return.
+    </div>`;
+}
+
+renderChips();
+renderQuestion();
+</script>
+</body>
+</html>
