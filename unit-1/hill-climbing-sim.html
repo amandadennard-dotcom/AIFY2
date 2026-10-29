@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hill Climbing Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 16px;
+    background: #ffffff;
+    color: #1a1a1a;
+    padding: 1.25rem 1.5rem 2rem;
+    line-height: 1.5;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: #1F1976;
+    margin-bottom: 10px;
+  }
+  .directions {
+    background: #D5EFFF;
+    border-radius: 10px;
+    padding: 13px 16px;
+    margin-bottom: 1.25rem;
+    font-size: 16px;
+    color: #06338D;
+    line-height: 1.6;
+  }
+  .hill-wrap {
+    position: relative;
+    background: #F5F4FD;
+    border-radius: 12px;
+    height: 180px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .hill-curve {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+  .marker {
+    position: absolute;
+    width: 18px; height: 18px;
+    background: #4C42CF;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    transform: translate(-50%, 50%);
+    transition: left 0.3s ease, bottom 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+  .readout {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 1rem;
+  }
+  .readout-box {
+    flex: 1;
+    background: #F7F7FB;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .readout-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .readout-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: #1F1976;
+  }
+  .controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+  .btn {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 24px;
+    border: 1.5px solid #4C42CF;
+    background: #ffffff;
+    color: #4C42CF;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btn:hover:not(:disabled) { background: #4C42CF; color: #ffffff; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn:focus-visible { outline: 3px solid #ACA8EA; outline-offset: 2px; }
+  .status-line {
+    background: #F7F7FB;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 16px;
+    color: #222222;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    text-align: center;
+    min-height: 50px;
+  }
+  .status-line strong { color: #1F1976; }
+  .reset-wrap { text-align: right; }
+  .reset-btn {
+    font-size: 13px;
+    color: #4C42CF;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+    text-decoration: underline;
+    padding: 0;
+  }
+  .reset-btn:hover { color: #1F1976; }
+  .summary-box {
+    background-color: #D5EFFF;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-top: 1rem;
+    font-size: 16px;
+    color: #06338D;
+    line-height: 1.6;
+  }
+  .sr-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+  @media (prefers-reduced-motion: reduce) { .marker { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div id="aria-live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
+
+<h1>Hill Climbing: Finding the Comfortable Temperature</h1>
+
+<div class="directions" role="note">
+  <strong>How this works:</strong> Use Warmer or Cooler to try a new temperature. The comfort score tells you how many classmates (out of 30) would be comfortable there. Keep moving toward higher comfort, one step at a time, same logic as the algorithm you'll trace by hand.
+</div>
+
+<div class="hill-wrap">
+  <svg class="hill-curve" viewBox="0 0 400 180" preserveAspectRatio="none">
+    <path d="M 0 160 Q 100 20 200 20 Q 300 20 400 160 L 400 180 L 0 180 Z" fill="#E4E2F8"/>
+  </svg>
+  <div class="marker" id="marker"></div>
+</div>
+
+<div class="readout">
+  <div class="readout-box">
+    <div class="readout-label">Temperature</div>
+    <div class="readout-value" id="temp-value">60&deg;</div>
+  </div>
+  <div class="readout-box">
+    <div class="readout-label">Comfort Score</div>
+    <div class="readout-value" id="comfort-value">4</div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn" id="btn-cooler" onclick="step(-1)">&larr; Cooler</button>
+  <button class="btn" id="btn-warmer" onclick="step(1)">Warmer &rarr;</button>
+</div>
+
+<div class="status-line" id="status-line">Starting at 60&deg;. Try a direction and see what happens.</div>
+
+<div class="reset-wrap"><button class="reset-btn" onclick="resetAll()">Reset</button></div>
+
+<div id="summary-area"></div>
+
+<script>
+const MIN_TEMP = 50;
+const MAX_TEMP = 85;
+const PEAK_TEMP = 70;
+
+function comfortScore(temp) {
+  const dist = Math.abs(temp - PEAK_TEMP);
+  const score = Math.round(30 - (dist * dist * 1.5));
+  return Math.max(0, score);
+}
+
+let temp = 60;
+let lastScore = comfortScore(temp);
+let atPeak = false;
+
+const liveRegion = document.getElementById('aria-live');
+const marker = document.getElementById('marker');
+const tempValue = document.getElementById('temp-value');
+const comfortValue = document.getElementById('comfort-value');
+const statusLine = document.getElementById('status-line');
+const btnCooler = document.getElementById('btn-cooler');
+const btnWarmer = document.getElementById('btn-warmer');
+
+function announce(msg) {
+  liveRegion.textContent = '';
+  setTimeout(() => { liveRegion.textContent = msg; }, 40);
+}
+
+function positionMarker() {
+  const pct = (temp - MIN_TEMP) / (MAX_TEMP - MIN_TEMP);
+  const leftPct = pct * 100;
+  const score = comfortScore(temp);
+  const maxScore = comfortScore(PEAK_TEMP);
+  const heightPct = (score / maxScore) * 75;
+  marker.style.left = leftPct + '%';
+  marker.style.bottom = heightPct + '%';
+}
+
+function render() {
+  tempValue.textContent = temp + '\u00B0';
+  comfortValue.textContent = comfortScore(temp);
+  positionMarker();
+  btnCooler.disabled = atPeak || temp <= MIN_TEMP;
+  btnWarmer.disabled = atPeak || temp >= MAX_TEMP;
+}
+
+function step(direction) {
+  const newTemp = temp + direction;
+  if (newTemp < MIN_TEMP || newTemp > MAX_TEMP) return;
+
+  const newScore = comfortScore(newTemp);
+  const oldScore = comfortScore(temp);
+
+  temp = newTemp;
+  render();
+
+  if (newScore > oldScore) {
+    statusLine.innerHTML = `Comfort went <strong>up</strong> to ${newScore}. Keep going that direction.`;
+    announce(`Temperature ${temp} degrees, comfort score ${newScore}, improved.`);
+  } else if (newScore < oldScore) {
+    statusLine.innerHTML = `Comfort went <strong>down</strong> to ${newScore}. Try the other direction instead.`;
+    announce(`Temperature ${temp} degrees, comfort score ${newScore}, decreased.`);
+  } else {
+    statusLine.innerHTML = `Comfort stayed the same at ${newScore}.`;
+    announce(`Temperature ${temp} degrees, comfort score unchanged.`);
+  }
+
+  const upScore = comfortScore(temp + 1);
+  const downScore = comfortScore(temp - 1);
+  const currentScore = comfortScore(temp);
+  if (temp > MIN_TEMP && temp < MAX_TEMP && currentScore >= upScore && currentScore >= downScore) {
+    atPeak = true;
+    render();
+    showSummary();
+  }
+}
+
+function showSummary() {
+  document.getElementById('summary-area').innerHTML = `
+    <div class="summary-box">
+      <strong>&#128161; You've reached a peak.</strong> Both neighboring temperatures score the same or worse, so hill climbing stops here. Try Reset and start from a different temperature, does it always end up at the same peak?
+    </div>
+  `;
+  announce('Reached a peak. Neither direction improves comfort further.');
+}
+
+function resetAll() {
+  temp = 60;
+  atPeak = false;
+  document.getElementById('summary-area').innerHTML = '';
+  statusLine.textContent = 'Starting at 60\u00B0. Try a direction and see what happens.';
+  render();
+  announce('Reset to 60 degrees.');
+}
+
+render();
+</script>
+</body>
+</html>
