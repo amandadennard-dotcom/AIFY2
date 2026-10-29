@@ -149,13 +149,17 @@
 <h1>Hill Climbing: Finding the Comfortable Temperature</h1>
 
 <div class="directions" role="note">
-  <strong>How this works:</strong> Use Warmer or Cooler to try a new temperature. The comfort score tells you how many classmates (out of 30) would be comfortable there. Keep moving toward higher comfort, one step at a time, same logic as the algorithm you'll trace by hand.
+  <strong>How this works:</strong> The shape below <em>is</em> the comfort score, plotted across every temperature. Higher on the hill means more classmates (out of 30) would be comfortable there. Use Warmer or Cooler to move the dot along the hill, one step at a time, same logic as the algorithm you'll trace by hand.
 </div>
 
 <div class="hill-wrap">
-  <svg class="hill-curve" viewBox="0 0 400 180" preserveAspectRatio="none">
-    <path d="M 0 160 Q 100 20 200 20 Q 300 20 400 160 L 400 180 L 0 180 Z" fill="#E4E2F8"/>
+  <svg class="hill-curve" viewBox="0 0 400 180" preserveAspectRatio="none" id="hill-svg">
+    <polygon id="hill-fill" fill="#E4E2F8" points=""/>
+    <polyline id="hill-outline" fill="none" stroke="#ACA8EA" stroke-width="2" points=""/>
   </svg>
+  <div class="hill-tick" style="position:absolute; left:0; bottom:4px; font-size:11px; color:#999;">50&deg;</div>
+  <div class="hill-tick" style="position:absolute; left:50%; bottom:4px; transform:translateX(-50%); font-size:11px; color:#4C42CF; font-weight:700;">70&deg; (peak)</div>
+  <div class="hill-tick" style="position:absolute; right:0; bottom:4px; font-size:11px; color:#999;">85&deg;</div>
   <div class="marker" id="marker"></div>
 </div>
 
@@ -166,7 +170,11 @@
   </div>
   <div class="readout-box">
     <div class="readout-label">Comfort Score</div>
-    <div class="readout-value" id="comfort-value">4</div>
+    <div class="readout-value" id="comfort-value">20</div>
+  </div>
+  <div class="readout-box">
+    <div class="readout-label">Steps Taken</div>
+    <div class="readout-value" id="steps-value">0</div>
   </div>
 </div>
 
@@ -187,13 +195,11 @@ const MAX_TEMP = 85;
 const PEAK_TEMP = 70;
 
 function comfortScore(temp) {
-  const dist = Math.abs(temp - PEAK_TEMP);
-  const score = Math.round(30 - (dist * dist * 1.5));
-  return Math.max(0, score);
+  return 30 - Math.abs(temp - PEAK_TEMP);
 }
 
 let temp = 60;
-let lastScore = comfortScore(temp);
+let steps = 0;
 let atPeak = false;
 
 const liveRegion = document.getElementById('aria-live');
@@ -209,19 +215,40 @@ function announce(msg) {
   setTimeout(() => { liveRegion.textContent = msg; }, 40);
 }
 
+// Shared coordinate mapping so the drawn curve and the marker always agree.
+const SVG_W = 400, SVG_H = 180, TOP_MARGIN = 20, BOTTOM_MARGIN = 20;
+const minScore = comfortScore(MIN_TEMP); // lowest point of the curve (at the edges)
+const maxScore = comfortScore(PEAK_TEMP); // highest point (the peak)
+
+function xForTemp(t) {
+  return ((t - MIN_TEMP) / (MAX_TEMP - MIN_TEMP)) * SVG_W;
+}
+function yForScore(s) {
+  const pct = (s - minScore) / (maxScore - minScore); // 0 at edges, 1 at peak
+  return (SVG_H - BOTTOM_MARGIN) - pct * (SVG_H - BOTTOM_MARGIN - TOP_MARGIN);
+}
+
+function drawHill() {
+  let points = [];
+  for (let t = MIN_TEMP; t <= MAX_TEMP; t++) {
+    points.push(xForTemp(t) + ',' + yForScore(comfortScore(t)));
+  }
+  document.getElementById('hill-outline').setAttribute('points', points.join(' '));
+  const fillPoints = points.join(' ') + ` ${SVG_W},${SVG_H} 0,${SVG_H}`;
+  document.getElementById('hill-fill').setAttribute('points', fillPoints);
+}
+
 function positionMarker() {
-  const pct = (temp - MIN_TEMP) / (MAX_TEMP - MIN_TEMP);
-  const leftPct = pct * 100;
-  const score = comfortScore(temp);
-  const maxScore = comfortScore(PEAK_TEMP);
-  const heightPct = (score / maxScore) * 75;
-  marker.style.left = leftPct + '%';
-  marker.style.bottom = heightPct + '%';
+  const xPx = xForTemp(temp);
+  const yPx = yForScore(comfortScore(temp));
+  marker.style.left = (xPx / SVG_W * 100) + '%';
+  marker.style.bottom = ((SVG_H - yPx) / SVG_H * 100) + '%';
 }
 
 function render() {
   tempValue.textContent = temp + '\u00B0';
   comfortValue.textContent = comfortScore(temp);
+  document.getElementById('steps-value').textContent = steps;
   positionMarker();
   btnCooler.disabled = atPeak || temp <= MIN_TEMP;
   btnWarmer.disabled = atPeak || temp >= MAX_TEMP;
@@ -235,13 +262,14 @@ function step(direction) {
   const oldScore = comfortScore(temp);
 
   temp = newTemp;
+  steps++;
   render();
 
   if (newScore > oldScore) {
-    statusLine.innerHTML = `Comfort went <strong>up</strong> to ${newScore}. Keep going that direction.`;
+    statusLine.innerHTML = `Comfort went <strong>up</strong> to ${newScore} (was ${oldScore}). Keep going that direction.`;
     announce(`Temperature ${temp} degrees, comfort score ${newScore}, improved.`);
   } else if (newScore < oldScore) {
-    statusLine.innerHTML = `Comfort went <strong>down</strong> to ${newScore}. Try the other direction instead.`;
+    statusLine.innerHTML = `Comfort went <strong>down</strong> to ${newScore} (was ${oldScore}). Try the other direction instead.`;
     announce(`Temperature ${temp} degrees, comfort score ${newScore}, decreased.`);
   } else {
     statusLine.innerHTML = `Comfort stayed the same at ${newScore}.`;
@@ -261,14 +289,15 @@ function step(direction) {
 function showSummary() {
   document.getElementById('summary-area').innerHTML = `
     <div class="summary-box">
-      <strong>&#128161; You've reached a peak.</strong> Both neighboring temperatures score the same or worse, so hill climbing stops here. Try Reset and start from a different temperature, does it always end up at the same peak?
+      <strong>&#128161; You've reached a peak after ${steps} steps.</strong> Both neighboring temperatures score the same or worse, so hill climbing stops here. Try Reset and start from a different temperature, does it always take the same number of steps? Does it always end up at the same peak?
     </div>
   `;
-  announce('Reached a peak. Neither direction improves comfort further.');
+  announce('Reached a peak after ' + steps + ' steps. Neither direction improves comfort further.');
 }
 
 function resetAll() {
   temp = 60;
+  steps = 0;
   atPeak = false;
   document.getElementById('summary-area').innerHTML = '';
   statusLine.textContent = 'Starting at 60\u00B0. Try a direction and see what happens.';
@@ -276,6 +305,7 @@ function resetAll() {
   announce('Reset to 60 degrees.');
 }
 
+drawHill();
 render();
 </script>
 </body>
