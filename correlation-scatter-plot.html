@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spotting Correlation and Outliers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 16px;
+    background: #ffffff;
+    color: #1a1a1a;
+    padding: 1.25rem 1.5rem 2rem;
+    line-height: 1.5;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: #1F1976;
+    margin-bottom: 10px;
+  }
+
+  .directions {
+    background: #D5EFFF;
+    border-radius: 10px;
+    padding: 13px 16px;
+    margin-bottom: 1.25rem;
+    font-size: 16px;
+    color: #06338D;
+    line-height: 1.6;
+  }
+
+  .chart-wrap {
+    background: #F7F7FB;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 1rem;
+  }
+
+  .axis-label-x {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #555;
+    margin-top: 6px;
+  }
+
+  .point { transition: r 0.2s, fill 0.2s, stroke 0.2s; cursor: default; }
+  .point.outlier-mode { cursor: pointer; }
+  .point.outlier-mode:hover { stroke: #4C42CF; stroke-width: 3; }
+  .point.selected-wrong { fill: #FFA868; }
+  .point.selected-correct { fill: #4C42CF; stroke: #1F1976; stroke-width: 3; }
+
+  .readout {
+    background: #FFFFFF;
+    border: 1px solid #E4E2F8;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 1rem;
+    font-size: 16px;
+    min-height: 54px;
+  }
+  .readout strong { color: #1F1976; }
+
+  .btn {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 22px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  .btn-primary { background: #4C42CF; color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #1F1976; }
+  .btn-primary:disabled { background: #ACA8EA; cursor: not-allowed; opacity: 0.6; }
+
+  .choice-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .btn-choice {
+    flex: 1;
+    min-width: 140px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 12px 14px;
+    border: 1.5px solid #4C42CF;
+    background: #ffffff;
+    color: #4C42CF;
+    cursor: pointer;
+  }
+  .btn-choice:hover:not(:disabled) { background: #F5F4FD; }
+  .btn-choice:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-choice.chosen-correct { background: #CCF1D0; border-color: #003F25; color: #003F25; }
+  .btn-choice.chosen-wrong { background: #FFE3CE; border-color: #611D00; color: #611D00; }
+
+  .feedback-box {
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 1rem;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .feedback-correct { background: #CCF1D0; color: #003F25; }
+  .feedback-wrong { background: #FFE3CE; color: #611D00; }
+
+  .summary-box {
+    background-color: #D5EFFF;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-top: 1rem;
+    font-size: 16px;
+    color: #06338D;
+    line-height: 1.6;
+  }
+
+  .sr-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div id="aria-live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
+
+<h1>Spotting Correlation and Outliers</h1>
+
+<div class="directions" role="note">
+  <strong>How this works:</strong> Add each artist's data one at a time. Once they're all plotted, decide what kind of correlation you see, then click the point that looks like an outlier.
+</div>
+
+<div class="chart-wrap">
+  <svg viewBox="0 0 400 320" width="100%" role="img" aria-label="Scatter plot of artist followers versus monthly streams, in thousands">
+    <!-- axes -->
+    <line x1="40" y1="10" x2="40" y2="270" stroke="#ACA8EA" stroke-width="2"/>
+    <line x1="40" y1="270" x2="390" y2="270" stroke="#ACA8EA" stroke-width="2"/>
+    <text x="10" y="20" font-size="10" fill="#777">500</text>
+    <text x="10" y="145" font-size="10" fill="#777">250</text>
+    <text x="25" y="274" font-size="10" fill="#777">0</text>
+    <text x="38" y="290" font-size="10" fill="#777">0</text>
+    <text x="195" y="290" font-size="10" fill="#777">250</text>
+    <text x="355" y="290" font-size="10" fill="#777">500</text>
+    <g id="points-group"></g>
+  </svg>
+  <div class="axis-label-x">Followers (thousands) &rarr;</div>
+</div>
+
+<div class="readout" id="readout">Click "Add Next Artist" to begin plotting.</div>
+
+<button class="btn btn-primary" id="btn-add" onclick="addNextPoint()">Add Next Artist</button>
+
+<div id="question-area" style="margin-top: 1.25rem;"></div>
+<div id="summary-area"></div>
+
+<script>
+const ARTISTS = [
+  { name: 'Nova Ray', followers: 50, streams: 45 },
+  { name: 'The Lighthouse', followers: 120, streams: 110 },
+  { name: 'Echo Field', followers: 200, streams: 180 },
+  { name: 'Marigold', followers: 310, streams: 290 },
+  { name: 'Static Bloom', followers: 400, streams: 20 },
+  { name: 'Cinder & Ash', followers: 480, streams: 460 }
+];
+const OUTLIER_NAME = 'Static Bloom';
+
+// chart coordinate mapping: data range 0-500 -> svg 40-390 (x), 270-10 (y)
+function xPix(v) { return 40 + (v / 500) * (390 - 40); }
+function yPix(v) { return 270 - (v / 500) * (270 - 10); }
+
+let addedCount = 0;
+let stage = 'plotting'; // plotting -> correlation -> outlier -> done
+let correlationAnswered = false;
+
+const liveRegion = document.getElementById('aria-live');
+const pointsGroup = document.getElementById('points-group');
+const readout = document.getElementById('readout');
+const btnAdd = document.getElementById('btn-add');
+
+function announce(msg) {
+  liveRegion.textContent = '';
+  setTimeout(() => { liveRegion.textContent = msg; }, 40);
+}
+
+function addNextPoint() {
+  if (addedCount >= ARTISTS.length) return;
+  const a = ARTISTS[addedCount];
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', xPix(a.followers));
+  circle.setAttribute('cy', yPix(a.streams));
+  circle.setAttribute('r', 7);
+  circle.setAttribute('fill', '#4C42CF');
+  circle.setAttribute('class', 'point');
+  circle.setAttribute('id', 'pt-' + a.name.replace(/[^a-zA-Z]/g, ''));
+  pointsGroup.appendChild(circle);
+
+  readout.innerHTML = `<strong>${a.name}:</strong> ${a.followers}K followers, ${a.streams}K monthly streams`;
+  announce(a.name + ', ' + a.followers + ' thousand followers, ' + a.streams + ' thousand streams.');
+
+  addedCount++;
+  if (addedCount >= ARTISTS.length) {
+    btnAdd.disabled = true;
+    btnAdd.textContent = 'All Artists Plotted';
+    showCorrelationQuestion();
+  }
+}
+
+function showCorrelationQuestion() {
+  document.getElementById('question-area').innerHTML = `
+    <p style="font-size:16px; margin-bottom:10px;"><strong>What kind of correlation do you see?</strong></p>
+    <div class="choice-row" id="correlation-choices">
+      <button class="btn-choice" onclick="answerCorrelation('positive', this)">Positive correlation</button>
+      <button class="btn-choice" onclick="answerCorrelation('negative', this)">Negative correlation</button>
+      <button class="btn-choice" onclick="answerCorrelation('none', this)">No correlation</button>
+    </div>
+    <div id="correlation-feedback"></div>
+  `;
+}
+
+function answerCorrelation(choice, btnEl) {
+  if (correlationAnswered) return;
+  correlationAnswered = true;
+  const buttons = document.querySelectorAll('#correlation-choices .btn-choice');
+  buttons.forEach(b => b.disabled = true);
+
+  const feedback = document.getElementById('correlation-feedback');
+  if (choice === 'positive') {
+    btnEl.classList.add('chosen-correct');
+    feedback.innerHTML = `<div class="feedback-box feedback-correct">Correct. As followers go up, streams generally go up too, a positive correlation. One artist breaks that pattern, though, can you spot it?</div>`;
+    announce('Correct, positive correlation.');
+  } else {
+    btnEl.classList.add('chosen-wrong');
+    feedback.innerHTML = `<div class="feedback-box feedback-wrong">Look again: as you move right (more followers), what generally happens to the height of the points (streams)? Most of them rise together, that's a positive correlation.</div>`;
+    announce('Not quite. Most points rise together as followers increase.');
+  }
+
+  setTimeout(showOutlierPrompt, 400);
+}
+
+function showOutlierPrompt() {
+  document.querySelectorAll('.point').forEach(p => p.classList.add('outlier-mode'));
+  document.querySelectorAll('.point').forEach(p => {
+    p.onclick = () => checkOutlier(p.id);
+  });
+
+  const area = document.getElementById('question-area');
+  const prompt = document.createElement('div');
+  prompt.innerHTML = `<p style="font-size:16px; margin-top:16px;"><strong>Now click the point that looks like an outlier.</strong></p><div id="outlier-feedback"></div>`;
+  area.appendChild(prompt);
+  announce('Click the point on the chart that looks like an outlier.');
+}
+
+function checkOutlier(pointId) {
+  const correctId = 'pt-' + OUTLIER_NAME.replace(/[^a-zA-Z]/g, '');
+  const el = document.getElementById(pointId);
+  const feedback = document.getElementById('outlier-feedback');
+
+  if (pointId === correctId) {
+    el.classList.add('selected-correct');
+    document.querySelectorAll('.point').forEach(p => { p.onclick = null; p.classList.remove('outlier-mode'); });
+    feedback.innerHTML = `<div class="feedback-box feedback-correct">Exactly right. Static Bloom has 400K followers but only 20K monthly streams, way below what the pattern would predict. That gap is worth a real discussion: maybe their fans don't stream much, maybe a lot of those followers are inactive, there's no single right explanation, just a real question worth asking.</div>`;
+    announce('Correct, Static Bloom is the outlier.');
+    showFinalSummary();
+  } else {
+    el.classList.add('selected-wrong');
+    feedback.innerHTML = `<div class="feedback-box feedback-wrong">That point still roughly fits the pattern. Look for the one point whose height doesn't match where it sits left-to-right.</div>`;
+    announce('Not quite the outlier, try another point.');
+    setTimeout(() => { el.classList.remove('selected-wrong'); }, 900);
+  }
+}
+
+function showFinalSummary() {
+  document.getElementById('summary-area').innerHTML = `
+    <div class="summary-box">
+      <strong>&#128161; Bring this to your classroom:</strong> correlation only tells you two things tend to move together, it doesn't explain why, and an outlier is only useful once you ask what might be different about it. Both ideas apply only to numerical data, categorical data doesn't have "correlation" the same way.
+    </div>
+  `;
+}
+
+announce('Scatter plot ready. Click Add Next Artist to begin.');
+</script>
+</body>
+</html>
