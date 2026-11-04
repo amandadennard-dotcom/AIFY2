@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prediction Models Vocabulary Flip Cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: transparent;
+    padding: 16px 8px;
+  }
+
+  .card-row {
+    display: grid;
+    grid-template-columns: repeat(2, 230px);
+    gap: 20px;
+    justify-content: center;
+  }
+
+  .flip-card {
+    width: 230px;
+    height: 220px;
+    perspective: 1000px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    font-family: inherit;
+    text-align: left;
+  }
+
+  .flip-card:focus-visible .flip-inner {
+    outline: 3px solid #ACA8EA;
+    outline-offset: 4px;
+    border-radius: 16px;
+  }
+
+  .flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.55s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+
+  .flip-card.flipped .flip-inner {
+    transform: rotateY(180deg);
+  }
+
+  .flip-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /* Front: brand purple */
+  .flip-front {
+    background: linear-gradient(145deg, #4C42CF 0%, #1F1976 100%);
+    color: #ffffff;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .flip-front .emoji {
+    font-size: 38px;
+    line-height: 1;
+  }
+
+  .flip-front .term {
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .flip-front .hint {
+    position: absolute;
+    bottom: 14px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.75);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* Back: white surface, purple frame */
+  .flip-back {
+    background: #ffffff;
+    border: 2px solid #4C42CF;
+    color: #1A1A1A;
+    transform: rotateY(180deg);
+  }
+
+  .flip-back .back-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #4C42CF;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+
+  .flip-back .definition {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .flip-back .definition strong {
+    color: #1F1976;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flip-inner { transition: none; }
+  }
+
+  @media (max-width: 500px) {
+    .card-row { grid-template-columns: 1fr; justify-items: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card-row">
+
+  <button class="flip-card" aria-pressed="false" onclick="toggleCard(this)">
+    <div class="flip-inner">
+      <div class="flip-face flip-front">
+        <div class="emoji" aria-hidden="true">&#128302;</div>
+        <div class="term">Prediction</div>
+        <div class="hint">Click to flip</div>
+      </div>
+      <div class="flip-face flip-back">
+        <div class="back-label">Prediction</div>
+        <div class="definition">An <strong>informed guess</strong> about something unknown.</div>
+      </div>
+    </div>
+  </button>
+
+  <button class="flip-card" aria-pressed="false" onclick="toggleCard(this)">
+    <div class="flip-inner">
+      <div class="flip-face flip-front">
+        <div class="emoji" aria-hidden="true">&#129504;</div>
+        <div class="term">Prediction Model</div>
+        <div class="hint">Click to flip</div>
+      </div>
+      <div class="flip-face flip-back">
+        <div class="back-label">Prediction Model</div>
+        <div class="definition">A <strong>machine learning model</strong> that makes predictions.</div>
+      </div>
+    </div>
+  </button>
+
+  <button class="flip-card" aria-pressed="false" onclick="toggleCard(this)">
+    <div class="flip-inner">
+      <div class="flip-face flip-front">
+        <div class="emoji" aria-hidden="true">&#128202;</div>
+        <div class="term">Regression</div>
+        <div class="hint">Click to flip</div>
+      </div>
+      <div class="flip-face flip-back">
+        <div class="back-label">Regression</div>
+        <div class="definition">A method used to predict <strong>numerical</strong> data.</div>
+      </div>
+    </div>
+  </button>
+
+  <button class="flip-card" aria-pressed="false" onclick="toggleCard(this)">
+    <div class="flip-inner">
+      <div class="flip-face flip-front">
+        <div class="emoji" aria-hidden="true">&#127991;&#65039;</div>
+        <div class="term">Classification</div>
+        <div class="hint">Click to flip</div>
+      </div>
+      <div class="flip-face flip-back">
+        <div class="back-label">Classification</div>
+        <div class="definition">A method used to predict <strong>categorical</strong> data.</div>
+      </div>
+    </div>
+  </button>
+
+</div>
+
+<script>
+  function toggleCard(card) {
+    card.classList.toggle('flipped');
+    card.setAttribute('aria-pressed', card.classList.contains('flipped'));
+  }
+</script>
+
+</body>
+</html>
