@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nearest Neighbors Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 16px;
+    background: #ffffff;
+    color: #1a1a1a;
+    padding: 1.25rem 1.5rem 2rem;
+    line-height: 1.5;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; color: #1F1976; margin-bottom: 10px; }
+  .directions { background: #D5EFFF; border-radius: 10px; padding: 13px 16px; margin-bottom: 1.25rem; font-size: 16px; color: #06338D; line-height: 1.6; }
+  .chart-wrap { background: #F7F7FB; border-radius: 12px; padding: 14px; margin-bottom: 1rem; cursor: crosshair; }
+  .legend { display: flex; gap: 16px; margin-bottom: 1rem; font-size: 13px; justify-content: center; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .controls { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 1rem; }
+  .btn-step { font-family: inherit; font-size: 15px; font-weight: 700; padding: 8px 18px; border-radius: 8px; border: 1.5px solid #4C42CF; background: #ffffff; color: #4C42CF; cursor: pointer; }
+  .btn-step:hover:not(:disabled) { background: #F5F4FD; }
+  .btn-step.active { background: #4C42CF; color: #fff; }
+  .result-box { background: #FFFFFF; border: 1px solid #E4E2F8; border-radius: 10px; padding: 14px 16px; text-align: center; margin-bottom: 1rem; min-height: 56px; }
+  .result-label { font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .result-value { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; }
+  .result-value.late { color: #611D00; }
+  .result-value.ontime { color: #003F25; }
+  .summary-box { background-color: #D5EFFF; border-radius: 10px; padding: 16px 18px; margin-top: 1rem; font-size: 16px; color: #06338D; line-height: 1.6; }
+  .sr-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div id="aria-live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
+
+<h1>Nearest Neighbors: Will the Mail Be Late?</h1>
+
+<div class="directions" role="note">
+  <strong>How this works:</strong> Click anywhere on the plot to place "Today." Dashed lines will connect it to its nearest neighbors. Try changing how many neighbors are used below.
+</div>
+
+<div class="legend">
+  <div class="legend-item"><span class="legend-dot" style="background:#611D00;"></span> Late</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#003F25;"></span> On Time</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#4C42CF;"></span> Today</div>
+</div>
+
+<div class="chart-wrap">
+  <svg id="chart" viewBox="0 0 320 260" width="100%" role="img" aria-label="Scatter plot of past days by snowfall and visibility, colored by whether mail was late or on time. Click to place a new point.">
+    <line x1="35" y1="10" x2="35" y2="230" stroke="#1a1a1a" stroke-width="1.5"/>
+    <line x1="35" y1="230" x2="300" y2="230" stroke="#1a1a1a" stroke-width="1.5"/>
+    <text x="150" y="250" font-size="11" fill="#1F1976" font-weight="700" text-anchor="middle">Snowfall (inches) &rarr;</text>
+    <text x="12" y="120" font-size="11" fill="#1F1976" font-weight="700" transform="rotate(-90, 12, 120)">Visibility &rarr;</text>
+    <g id="past-points"></g>
+    <g id="guides"></g>
+    <circle id="today-point" r="7" fill="#4C42CF" stroke="#fff" stroke-width="2" style="display:none;"/>
+  </svg>
+</div>
+
+<div class="controls">
+  <span style="font-size: 14px; font-weight: 700; color: #555;">Neighbors (k):</span>
+  <button class="btn-step active" id="k1" onclick="setK(1)">1</button>
+  <button class="btn-step" id="k3" onclick="setK(3)">3</button>
+  <button class="btn-step" id="k5" onclick="setK(5)">5</button>
+</div>
+
+<div class="result-box" id="result-box">Click the chart to place Today.</div>
+
+<div id="summary-area"></div>
+
+<script>
+// Past days: [snowfall(0-10), visibility(0-10), label]
+const DAYS = [
+  [1, 9, 'On Time'], [0.5, 9.5, 'On Time'], [1.5, 8, 'On Time'], [2, 8.5, 'On Time'],
+  [2.5, 7, 'On Time'], [1, 7.5, 'On Time'],
+  [7, 2, 'Late'], [8, 1.5, 'Late'], [6.5, 3, 'Late'], [7.5, 1, 'Late'],
+  [9, 2.5, 'Late'], [6, 2, 'Late']
+];
+
+const MIN = 0, MAX = 10;
+function xPix(v) { return 35 + (v / MAX) * (300 - 35); }
+function yPix(v) { return 230 - (v / MAX) * (230 - 10); }
+
+let k = 1;
+let todayPoint = null; // {snowfall, visibility}
+let hasPlaced = false;
+
+const liveRegion = document.getElementById('aria-live');
+function announce(msg) { liveRegion.textContent = ''; setTimeout(() => { liveRegion.textContent = msg; }, 40); }
+
+function drawPastPoints() {
+  const g = document.getElementById('past-points');
+  g.innerHTML = DAYS.map(([sf, vis, label]) => {
+    const color = label === 'Late' ? '#611D00' : '#003F25';
+    return `<circle cx="${xPix(sf)}" cy="${yPix(vis)}" r="6" fill="${color}" opacity="0.85"/>`;
+  }).join('');
+}
+
+function distance(a, b) {
+  return Math.sqrt(Math.pow(a[0]-b[0],2) + Math.pow(a[1]-b[1],2));
+}
+
+function setK(newK) {
+  k = newK;
+  document.querySelectorAll('.btn-step').forEach(b => b.classList.remove('active'));
+  document.getElementById('k' + newK).classList.add('active');
+  if (todayPoint) predict();
+}
+
+function predict() {
+  const sorted = DAYS.map(d => ({ d, dist: distance([todayPoint.snowfall, todayPoint.visibility], [d[0], d[1]]) }))
+    .sort((a, b) => a.dist - b.dist);
+  const neighbors = sorted.slice(0, k);
+
+  // draw guide lines
+  const guides = document.getElementById('guides');
+  guides.innerHTML = neighbors.map(n => {
+    return `<line x1="${xPix(todayPoint.snowfall)}" y1="${yPix(todayPoint.visibility)}" x2="${xPix(n.d[0])}" y2="${yPix(n.d[1])}" stroke="#ACA8EA" stroke-width="1.5" stroke-dasharray="4,3"/>`;
+  }).join('');
+
+  // majority vote
+  const counts = { Late: 0, 'On Time': 0 };
+  neighbors.forEach(n => counts[n.d[2]]++);
+  const prediction = counts.Late > counts['On Time'] ? 'Late' : 'On Time';
+
+  const box = document.getElementById('result-box');
+  const cls = prediction === 'Late' ? 'late' : 'ontime';
+  box.innerHTML = `<div class="result-label">Predicted</div><div class="result-value ${cls}">${prediction}</div>`;
+  announce('Prediction: ' + prediction + ', based on ' + k + ' nearest neighbor' + (k > 1 ? 's' : '') + '.');
+
+  if (!hasPlaced) {
+    hasPlaced = true;
+    showSummary();
+  }
+}
+
+function showSummary() {
+  document.getElementById('summary-area').innerHTML = `
+    <div class="summary-box">
+      <strong>&#128161; Try this:</strong> move Today close to the boundary between the two groups, then switch between k=1 and k=5. Does the prediction stay the same, or flip? That instability is exactly what Level 3 asks students to notice, more neighbors isn't automatically better.
+    </div>
+  `;
+}
+
+document.getElementById('chart').addEventListener('click', function(e) {
+  const rect = this.getBoundingClientRect();
+  const viewBoxWidth = 320, viewBoxHeight = 260;
+  const scaleX = viewBoxWidth / rect.width, scaleY = viewBoxHeight / rect.height;
+  const clickX = (e.clientX - rect.left) * scaleX;
+  const clickY = (e.clientY - rect.top) * scaleY;
+
+  const snowfall = Math.max(MIN, Math.min(MAX, ((clickX - 35) / (300 - 35)) * MAX));
+  const visibility = Math.max(MIN, Math.min(MAX, ((230 - clickY) / (230 - 10)) * MAX));
+
+  todayPoint = { snowfall, visibility };
+  document.getElementById('today-point').setAttribute('cx', xPix(snowfall));
+  document.getElementById('today-point').setAttribute('cy', yPix(visibility));
+  document.getElementById('today-point').style.display = 'block';
+
+  predict();
+});
+
+drawPastPoints();
+announce('Chart ready. Click anywhere to place Today.');
+</script>
+</body>
+</html>
