@@ -22,13 +22,20 @@
   h1 { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; color: #1F1976; margin-bottom: 10px; }
   .directions { background: #D5EFFF; border-radius: 10px; padding: 13px 16px; margin-bottom: 1.25rem; font-size: 16px; color: #06338D; line-height: 1.6; }
 
-  .berry-row { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; justify-content: center; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-bottom: 1rem; font-size: 12px; color: #333; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; }
+  .legend-ring { width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px #4C42CF; flex-shrink: 0; }
+
+  .berry-row { display: flex; gap: 10px; margin-bottom: 0.4rem; flex-wrap: wrap; justify-content: center; }
+  .berry-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .berry {
-    width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
     font-size: 11px; font-weight: 700; color: #fff; position: relative; transition: background 0.2s, transform 0.2s;
   }
   .berry.flagged { transform: scale(1.12); }
-  .berry-label { position: absolute; top: -18px; font-size: 9px; color: #555; white-space: nowrap; }
+  .berry-caption { font-size: 10px; font-weight: 700; color: #555; white-space: nowrap; text-align: center; }
+  .berry-caption .flagged-text { color: #4C42CF; }
 
   .slider-wrap { margin: 1.25rem 0; }
   .slider-label { font-size: 14px; font-weight: 700; color: #1F1976; margin-bottom: 8px; text-align: center; }
@@ -50,7 +57,13 @@
 <h1>Tuning a Confidence Threshold</h1>
 
 <div class="directions" role="note">
-  <strong>How this works:</strong> Each berry's true confidence score is fixed. Move the threshold slider, any berry whose confidence is at or above it gets flagged as predicted toxic. Watch recall and precision as you move it.
+  <strong>How this works:</strong> Below are 8 berries from the Berry Picking Activity Guide. Each one has a fixed confidence score, how sure a model is that it's toxic, shown inside the circle. The circle's color (see legend) shows what the berry actually is. Move the threshold slider: any berry whose confidence is at or above the threshold gets a purple ring, meaning the model is currently predicting "toxic" for it. Watch how recall and precision change as the ring picks up or drops berries.
+</div>
+
+<div class="legend" role="note" aria-hidden="false">
+  <div class="legend-item"><span class="legend-swatch" style="background:#611D00;"></span> Actually toxic</div>
+  <div class="legend-item"><span class="legend-swatch" style="background:#003F25;"></span> Actually not toxic</div>
+  <div class="legend-item"><span class="legend-ring"></span> Flagged as toxic at this threshold</div>
 </div>
 
 <div class="berry-row" id="berry-row"></div>
@@ -95,8 +108,12 @@ function renderBerries(threshold) {
   row.innerHTML = BERRIES.map((b, i) => {
     const flagged = b.conf >= threshold;
     const color = b.actuallyToxic ? '#611D00' : '#003F25';
-    return `<div class="berry${flagged ? ' flagged' : ''}" style="background:${color}; ${flagged ? 'box-shadow:0 0 0 3px #4C42CF;' : ''}">
-      ${b.conf}%
+    const label = 'Berry ' + (i + 1) + ': ' + b.conf + '% confidence, actually ' + (b.actuallyToxic ? 'toxic' : 'not toxic') + (flagged ? ', currently flagged as toxic' : ', currently not flagged');
+    return `<div class="berry-wrap">
+      <div class="berry${flagged ? ' flagged' : ''}" style="background:${color}; ${flagged ? 'box-shadow:0 0 0 3px #4C42CF;' : ''}" title="${label}" aria-label="${label}">
+        ${b.conf}%
+      </div>
+      <div class="berry-caption">Berry ${i + 1}${flagged ? '<br><span class="flagged-text">flagged</span>' : ''}</div>
     </div>`;
   }).join('');
 }
