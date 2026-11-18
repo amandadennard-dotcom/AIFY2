@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Counts as a Pedestrian?</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Geist', system-ui, 'Segoe UI', sans-serif;
+    background-color: #FFFFFF;
+    color: #222222;
+    padding: 16px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .toggle-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .toggle-btn {
+    flex: 1;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px;
+    border-radius: 8px;
+    border: 2px solid #ACA8EA;
+    background-color: #FFFFFF;
+    color: #1F1976;
+    cursor: pointer;
+  }
+  .toggle-btn.active {
+    background-color: #4C42CF;
+    border-color: #4C42CF;
+    color: #FFFFFF;
+  }
+  .legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .photo-card {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 3px solid transparent;
+    background-color: #F7F7FB;
+  }
+  .photo-card.pedestrian { border-color: #CCF1D0; }
+  .photo-card.not-pedestrian { border-color: #FFE3CE; }
+  .photo-card img {
+    width: 100%;
+    height: 75px;
+    object-fit: cover;
+    display: block;
+  }
+  .photo-caption {
+    font-size: 10px;
+    padding: 4px 6px;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .call-badge {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 0;
+  }
+  .call-badge.ped { color: #1A7A2E; }
+  .call-badge.notped { color: #B35A00; }
+  .changed-flag {
+    display: inline-block;
+    background-color: #FFA868;
+    color: #FFFFFF;
+    font-size: 9px;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-top: 2px;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+  }
+  .decision-block {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid #E4E2F8;
+  }
+  .decision-prompt {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1F1976;
+    margin-bottom: 10px;
+  }
+  .choice-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .choice-btn {
+    flex: 1;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px;
+    border-radius: 8px;
+    border: 2px solid #ACA8EA;
+    background-color: #FFFFFF;
+    color: #1F1976;
+    cursor: pointer;
+  }
+  .choice-btn.chosen { background-color: #4C42CF; border-color: #4C42CF; color: #FFFFFF; }
+  .decision-reveal {
+    display: none;
+    background-color: #F7F7FB;
+    border-left: 4px solid #4C42CF;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .decision-reveal.shown { display: block; }
+  .decision-reveal .extension {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #E4E2F8;
+  }
+  .instructions {
+    font-size: 14px;
+    color: #1F1976;
+    background-color: #F7F7FB;
+    border-left: 4px solid #4C42CF;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="instructions">Toggle between Model 1 and Model 2, look at how each one classifies the same photos, then decide which one you think is safer.</div>
+  <div class="toggle-row">
+    <button type="button" class="toggle-btn active" id="btnModel1">Model 1</button>
+    <button type="button" class="toggle-btn" id="btnModel2">Model 2</button>
+  </div>
+
+  <div class="legend">
+    <span><span class="swatch" style="background-color: #CCF1D0;"></span> Classified as pedestrian</span>
+    <span><span class="swatch" style="background-color: #FFE3CE;"></span> Classified as not pedestrian</span>
+    <span><span class="swatch" style="background-color: #FFA868;"></span> Changed from Model 1</span>
+  </div>
+
+  <div class="photo-grid" id="photoGrid"></div>
+
+  <div class="decision-block">
+    <div class="decision-prompt">These models decide when a self-driving car stops for a pedestrian. Which one would you use?</div>
+    <div class="choice-row">
+      <button type="button" class="choice-btn" id="chooseModel1">Model 1</button>
+      <button type="button" class="choice-btn" id="chooseModel2">Model 2</button>
+    </div>
+    <div class="decision-reveal" id="decisionReveal">
+      <div>We'd use Model 2, because it's safer. Model 1 might hit bikers, it's more accurate on this set of photos, but it misses exactly the categories a car can't afford to miss.</div>
+      <div class="extension">Now go further: telling pedestrians apart from everything else is only one goal. If you were building this model from scratch, how would you improve it? There are other reasons a self-driving car should stop, it should also avoid bikers and stop at traffic lights, not just people on foot.</div>
+    </div>
+  </div>
+
+  <div id="liveRegion" class="sr-only" aria-live="polite"></div>
+</div>
+
+<script>
+(function() {
+  var photos = [
+    { desc: 'Person walking in a crosswalk', src: 'pedestrian-crosswalk-1.png', m1: 'pedestrian', m2: 'pedestrian' },
+    { desc: 'Person walking in a crosswalk', src: 'pedestrian-crosswalk-2.png', m1: 'pedestrian', m2: 'pedestrian' },
+    { desc: 'Person crossing the street', src: 'pedestrian-crossing-street.png', m1: 'pedestrian', m2: 'pedestrian' },
+    { desc: 'Person on a motorcycle near a crosswalk', src: 'pedestrian-motorcycle.png', m1: 'not-pedestrian', m2: 'pedestrian' },
+    { desc: 'Person on a bicycle in a crosswalk', src: 'pedestrian-bicycle.png', m1: 'not-pedestrian', m2: 'pedestrian' },
+    { desc: 'Cars on a crosswalk', src: 'pedestrian-car-crosswalk.png', m1: 'not-pedestrian', m2: 'pedestrian' },
+    { desc: 'Cars on a highway', src: 'pedestrian-cars-highway.png', m1: 'not-pedestrian', m2: 'not-pedestrian' },
+    { desc: 'An empty crosswalk', src: 'pedestrian-empty-crosswalk.png', m1: 'not-pedestrian', m2: 'not-pedestrian' }
+  ];
+
+  var currentModel = 'm1';
+  var grid = document.getElementById('photoGrid');
+  var liveRegion = document.getElementById('liveRegion');
+
+  function render() {
+    grid.innerHTML = '';
+    photos.forEach(function(photo) {
+      var call = photo[currentModel];
+      var changed = currentModel === 'm2' && photo.m1 !== photo.m2;
+
+      var card = document.createElement('div');
+      card.className = 'photo-card ' + call;
+
+      var img = document.createElement('img');
+      img.src = photo.src;
+      img.alt = photo.desc + ' (Model ' + (currentModel === 'm1' ? '1' : '2') + ' calls this ' + (call === 'pedestrian' ? 'a pedestrian' : 'not a pedestrian') + ')';
+      card.appendChild(img);
+
+      var caption = document.createElement('div');
+      caption.className = 'photo-caption';
+      var badge = document.createElement('div');
+      badge.className = 'call-badge ' + (call === 'pedestrian' ? 'ped' : 'notped');
+      badge.textContent = call === 'pedestrian' ? 'Pedestrian' : 'Not pedestrian';
+      caption.appendChild(badge);
+      if (changed) {
+        var flag = document.createElement('div');
+        flag.className = 'changed-flag';
+        flag.textContent = 'Changed';
+        caption.appendChild(flag);
+      }
+      card.appendChild(caption);
+      grid.appendChild(card);
+    });
+  }
+
+  document.getElementById('btnModel1').addEventListener('click', function() {
+    currentModel = 'm1';
+    this.classList.add('active');
+    document.getElementById('btnModel2').classList.remove('active');
+    render();
+    liveRegion.textContent = 'Showing Model 1 classifications.';
+  });
+
+  document.getElementById('btnModel2').addEventListener('click', function() {
+    currentModel = 'm2';
+    this.classList.add('active');
+    document.getElementById('btnModel1').classList.remove('active');
+    render();
+    liveRegion.textContent = 'Showing Model 2 classifications. Three photos changed from not pedestrian to pedestrian.';
+  });
+
+  document.getElementById('chooseModel1').addEventListener('click', function() {
+    this.classList.add('chosen');
+    document.getElementById('chooseModel2').classList.remove('chosen');
+    document.getElementById('decisionReveal').classList.add('shown');
+    liveRegion.textContent = 'You chose Model 1. Reveal shown below.';
+  });
+
+  document.getElementById('chooseModel2').addEventListener('click', function() {
+    this.classList.add('chosen');
+    document.getElementById('chooseModel1').classList.remove('chosen');
+    document.getElementById('decisionReveal').classList.add('shown');
+    liveRegion.textContent = 'You chose Model 2. Reveal shown below.';
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
