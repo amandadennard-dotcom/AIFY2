@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seeing Through Bits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 16px;
+    background: #ffffff;
+    color: #1a1a1a;
+    padding: 1.25rem 1.5rem 2rem;
+    line-height: 1.5;
+    max-width: 620px;
+    margin: 0 auto;
+  }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; color: #1F1976; margin-bottom: 10px; }
+  .directions { background: #D5EFFF; border-radius: 10px; padding: 13px 16px; margin-bottom: 1.25rem; font-size: 16px; color: #06338D; line-height: 1.6; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(11, 1fr);
+    gap: 2px;
+    max-width: 480px;
+    margin: 0 auto 1.25rem;
+    border: 1px solid #ACA8EA;
+  }
+  .cell {
+    aspect-ratio: 1 / 1;
+    background: #ffffff;
+    border: 1px solid #E4E2F8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #777;
+    cursor: pointer;
+    user-select: none;
+  }
+  .cell.filled {
+    background: #1A1A1A;
+    color: transparent;
+  }
+  .cell:focus-visible {
+    outline: 2px solid #4C42CF;
+    outline-offset: 1px;
+    z-index: 1;
+  }
+
+  .button-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  button.action {
+    font-family: 'Geist', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 2px solid #4C42CF;
+    background: #ffffff;
+    color: #4C42CF;
+    cursor: pointer;
+  }
+  button.action.primary { background: #4C42CF; color: #fff; }
+  button.action:focus-visible { outline: 3px solid #ACA8EA; outline-offset: 2px; }
+
+  .reveal-box {
+    background-color: #CCF1D0;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-top: 1rem;
+    font-size: 16px;
+    color: #003F25;
+    line-height: 1.6;
+    text-align: center;
+    display: none;
+  }
+  .reveal-box.shown { display: block; }
+  .sr-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div id="aria-live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
+
+<h1>Seeing Through Bits</h1>
+
+<div class="directions" role="note">
+  <strong>How this works:</strong> Every cell shows a bit, 0 or 1. Click a cell to fill it in: a 1 turns black, a 0 stays white, exactly like the real Activity Guide. Fill in enough cells to guess the image, then press Reveal to check.
+</div>
+
+<div class="grid" id="bit-grid" role="group" aria-label="11 by 11 grid of bits. Click a cell to fill in 1s as black squares."></div>
+
+<div class="button-row">
+  <button class="action primary" onclick="revealAll()">Reveal All</button>
+  <button class="action" onclick="resetGrid()">Reset</button>
+</div>
+
+<div class="reveal-box" id="reveal-box">
+  <strong>&#127769; It's a moon!</strong> This is the real Moon variation from the Seeing Through Bits Activity Guide, one of five images students might reveal depending on which variation they're given.
+</div>
+
+<script>
+// Real data: Variation 4 (Moon), from the Seeing Through Bits Activity Guide exemplar
+const GRID = [
+  [0,0,0,1,1,0,0,0,0,0,0],
+  [0,0,1,0,1,0,0,0,0,0,0],
+  [0,1,0,1,0,0,0,0,0,0,0],
+  [1,0,0,1,0,0,0,0,0,0,0],
+  [1,0,0,1,0,0,0,0,0,0,0],
+  [1,0,0,1,0,0,0,0,0,0,0],
+  [1,0,0,0,1,0,0,0,0,1,1],
+  [1,0,0,0,0,1,1,1,1,0,1],
+  [0,1,0,0,0,0,0,0,0,1,0],
+  [0,0,1,0,0,0,0,0,1,0,0],
+  [0,0,0,1,1,1,1,1,0,0,0]
+];
+
+const liveRegion = document.getElementById('aria-live');
+function announce(msg) { liveRegion.textContent = ''; setTimeout(() => { liveRegion.textContent = msg; }, 40); }
+
+function buildGrid() {
+  const grid = document.getElementById('bit-grid');
+  grid.innerHTML = '';
+  GRID.forEach((row, r) => {
+    row.forEach((bit, c) => {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.textContent = bit;
+      cell.tabIndex = 0;
+      cell.setAttribute('role', 'button');
+      cell.setAttribute('aria-label', 'Row ' + (r + 1) + ', column ' + (c + 1) + ', bit value ' + bit + (bit === 1 ? ', click to fill black' : ', zero stays white'));
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+      cell.dataset.bit = bit;
+      cell.addEventListener('click', () => toggleCell(cell));
+      cell.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCell(cell); } });
+      grid.appendChild(cell);
+    });
+  });
+}
+
+function toggleCell(cell) {
+  if (cell.dataset.bit === '1') {
+    const nowFilled = cell.classList.toggle('filled');
+    announce(nowFilled ? 'Cell filled black' : 'Cell cleared');
+  } else {
+    announce('This bit is 0, it stays white');
+  }
+  checkIfComplete();
+}
+
+function checkIfComplete() {
+  const cells = document.querySelectorAll('.cell');
+  let allOnesFilled = true;
+  cells.forEach(cell => {
+    if (cell.dataset.bit === '1' && !cell.classList.contains('filled')) allOnesFilled = false;
+  });
+  if (allOnesFilled) showReveal();
+}
+
+function revealAll() {
+  document.querySelectorAll('.cell').forEach(cell => {
+    if (cell.dataset.bit === '1') cell.classList.add('filled');
+  });
+  showReveal();
+  announce('All bits revealed. The image is a moon.');
+}
+
+function showReveal() {
+  document.getElementById('reveal-box').classList.add('shown');
+}
+
+function resetGrid() {
+  document.querySelectorAll('.cell').forEach(cell => cell.classList.remove('filled'));
+  document.getElementById('reveal-box').classList.remove('shown');
+  announce('Grid reset.');
+}
+
+buildGrid();
+announce('Seeing through bits ready. Click cells to fill in the ones.');
+</script>
+</body>
+</html>
