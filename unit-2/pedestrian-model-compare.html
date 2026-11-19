@@ -46,22 +46,51 @@
   }
   .legend span { display: flex; align-items: center; gap: 5px; }
   .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
-  .photo-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+  .bucket-container {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .bucket {
+    flex: 1;
+    min-width: 0;
+    border-radius: 12px;
+    padding: 12px;
+    background-color: #FFFFFF;
+    transition: background-color 0.2s;
+  }
+  .bucket.pedestrian-bucket { border: 3px solid #4FAF63; background-color: #F3FBF4; }
+  .bucket.not-pedestrian-bucket { border: 3px solid #FFA868; background-color: #FFF8F0; }
+  .bucket-header {
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    padding: 6px 4px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+  .pedestrian-bucket .bucket-header { background-color: #CCF1D0; color: #1A7A2E; }
+  .not-pedestrian-bucket .bucket-header { background-color: #FFE3CE; color: #B35A00; }
+  .bucket-photos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 40px;
   }
   .photo-card {
+    width: calc(50% - 4px);
     border-radius: 8px;
     overflow: hidden;
-    border: 3px solid transparent;
     background-color: #F7F7FB;
+    animation: fadeIn 0.3s ease;
   }
-  .photo-card.pedestrian { border-color: #CCF1D0; }
-  .photo-card.not-pedestrian { border-color: #FFE3CE; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+  }
   .photo-card img {
     width: 100%;
-    height: 75px;
+    height: 130px;
     object-fit: cover;
     display: block;
   }
@@ -71,22 +100,14 @@
     text-align: center;
     line-height: 1.3;
   }
-  .call-badge {
-    font-size: 9px;
-    font-weight: 700;
-    text-transform: uppercase;
-    padding: 2px 0;
-  }
-  .call-badge.ped { color: #1A7A2E; }
-  .call-badge.notped { color: #B35A00; }
   .changed-flag {
     display: inline-block;
     background-color: #FFA868;
     color: #FFFFFF;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     border-radius: 4px;
-    padding: 1px 5px;
+    padding: 2px 6px;
     margin-top: 2px;
   }
   .sr-only {
@@ -164,7 +185,16 @@
     <span><span class="swatch" style="background-color: #FFA868;"></span> Changed from Model 1</span>
   </div>
 
-  <div class="photo-grid" id="photoGrid"></div>
+  <div class="bucket-container">
+    <div class="bucket pedestrian-bucket">
+      <div class="bucket-header">Classified as Pedestrian</div>
+      <div class="bucket-photos" id="pedestrianBucket"></div>
+    </div>
+    <div class="bucket not-pedestrian-bucket">
+      <div class="bucket-header">Classified as Not Pedestrian</div>
+      <div class="bucket-photos" id="notPedestrianBucket"></div>
+    </div>
+  </div>
 
   <div class="decision-block">
     <div class="decision-prompt">These models decide when a self-driving car stops for a pedestrian. Which one would you use?</div>
@@ -195,37 +225,41 @@
   ];
 
   var currentModel = 'm1';
-  var grid = document.getElementById('photoGrid');
+  var pedestrianBucket = document.getElementById('pedestrianBucket');
+  var notPedestrianBucket = document.getElementById('notPedestrianBucket');
   var liveRegion = document.getElementById('liveRegion');
 
   function render() {
-    grid.innerHTML = '';
+    pedestrianBucket.innerHTML = '';
+    notPedestrianBucket.innerHTML = '';
+
     photos.forEach(function(photo) {
       var call = photo[currentModel];
       var changed = currentModel === 'm2' && photo.m1 !== photo.m2;
 
       var card = document.createElement('div');
-      card.className = 'photo-card ' + call;
+      card.className = 'photo-card';
 
       var img = document.createElement('img');
       img.src = photo.src;
       img.alt = photo.desc + ' (Model ' + (currentModel === 'm1' ? '1' : '2') + ' calls this ' + (call === 'pedestrian' ? 'a pedestrian' : 'not a pedestrian') + ')';
       card.appendChild(img);
 
-      var caption = document.createElement('div');
-      caption.className = 'photo-caption';
-      var badge = document.createElement('div');
-      badge.className = 'call-badge ' + (call === 'pedestrian' ? 'ped' : 'notped');
-      badge.textContent = call === 'pedestrian' ? 'Pedestrian' : 'Not pedestrian';
-      caption.appendChild(badge);
       if (changed) {
+        var caption = document.createElement('div');
+        caption.className = 'photo-caption';
         var flag = document.createElement('div');
         flag.className = 'changed-flag';
-        flag.textContent = 'Changed';
+        flag.textContent = 'Changed from Model 1';
         caption.appendChild(flag);
+        card.appendChild(caption);
       }
-      card.appendChild(caption);
-      grid.appendChild(card);
+
+      if (call === 'pedestrian') {
+        pedestrianBucket.appendChild(card);
+      } else {
+        notPedestrianBucket.appendChild(card);
+      }
     });
   }
 
