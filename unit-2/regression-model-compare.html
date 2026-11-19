@@ -19,7 +19,7 @@
   .tab-btn {
     flex: 1;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
     padding: 10px;
     border-radius: 8px;
@@ -31,16 +31,17 @@
   .tab-btn.active { background-color: #4C42CF; border-color: #4C42CF; color: #FFFFFF; }
   .panel { display: none; }
   .panel.active { display: block; }
+  svg { display: block; height: auto; }
   svg text { font-family: 'Geist', system-ui, sans-serif; }
   .slider-row { display: flex; align-items: center; gap: 12px; margin: 14px 0; }
   .slider-row input[type="range"] { flex: 1; }
-  .slider-value { font-weight: 700; color: #1F1976; min-width: 90px; font-size: 14px; }
+  .slider-value { font-weight: 700; color: #1F1976; min-width: 90px; font-size: 16px; }
   .pred-row { display: flex; gap: 12px; margin-bottom: 10px; }
   .pred-card {
     flex: 1;
     border-radius: 8px;
     padding: 10px 12px;
-    font-size: 13px;
+    font-size: 16px;
   }
   .pred-card.m1 { background-color: #D5EFFF; }
   .pred-card.m2 { background-color: #FFE3CE; }
@@ -49,7 +50,7 @@
   .flag {
     background-color: #FFA868;
     color: #FFFFFF;
-    font-size: 11px;
+    font-size: 16px;
     font-weight: 700;
     border-radius: 6px;
     padding: 6px 10px;
@@ -59,10 +60,10 @@
   .flag.shown { display: block; }
   .basketball-charts { display: flex; gap: 16px; flex-wrap: wrap; }
   .basketball-charts .chart-block { flex: 1; min-width: 260px; }
-  .chart-title { font-size: 13px; font-weight: 700; color: #1F1976; margin-bottom: 4px; }
+  .chart-title { font-size: 16px; font-weight: 700; color: #1F1976; margin-bottom: 4px; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
   .instructions {
-    font-size: 15px;
+    font-size: 16px;
     color: #1F1976;
     background-color: #F7F7FB;
     border-left: 4px solid #4C42CF;
@@ -71,7 +72,7 @@
     margin-bottom: 16px;
   }
   .caption {
-    font-size: 13px;
+    font-size: 16px;
     color: #1F1976;
     background-color: #F7F7FB;
     border-left: 4px solid #4C42CF;
@@ -88,14 +89,14 @@
     flex: 1;
     border-radius: 8px;
     padding: 8px 12px;
-    font-size: 12px;
+    font-size: 16px;
     text-align: center;
   }
   .error-stat.m1 { background-color: #D5EFFF; }
   .error-stat.m2 { background-color: #FFE3CE; }
   .error-stat .error-value { font-size: 16px; font-weight: 700; }
   .reflection {
-    font-size: 13px;
+    font-size: 16px;
     color: #222222;
     background-color: #E4E2F8;
     border-radius: 8px;
@@ -114,9 +115,9 @@
 
   <div class="panel active" id="panelAirplane">
     <div class="caption">Both models were trained on the same flights. Model 1 fits that data more closely overall. Model 2 gives up some accuracy for a wider safety margin.</div>
-    <svg id="airplaneChart" viewBox="0 0 560 300" width="100%" height="260" role="img" aria-label="Scatterplot of number of passengers versus temperature with two model lines"></svg>
+    <svg id="airplaneChart" viewBox="0 0 560 300" width="100%" role="img" aria-label="Scatterplot of number of passengers versus temperature with two model lines"></svg>
     <div class="slider-row">
-      <label for="tempSlider" style="font-size: 13px; font-weight: 600;">Temperature:</label>
+      <label for="tempSlider" style="font-size: 16px; font-weight: 600;">Temperature:</label>
       <input type="range" id="tempSlider" min="55" max="110" value="55" step="1">
       <span class="slider-value" id="tempValue">55&#176;F</span>
     </div>
@@ -145,9 +146,9 @@
     <div class="basketball-charts">
       <div class="chart-block">
         <div class="chart-title">Model 1: Height vs. Points Scored</div>
-        <svg id="heightChart" viewBox="0 0 280 260" width="100%" height="230" role="img" aria-label="Scatterplot of points scored versus height, with a regression line"></svg>
+        <svg id="heightChart" viewBox="0 0 280 260" width="100%" role="img" aria-label="Scatterplot of points scored versus height, with a regression line"></svg>
         <div class="slider-row">
-          <label for="heightSlider" style="font-size: 13px; font-weight: 600;">Height:</label>
+          <label for="heightSlider" style="font-size: 16px; font-weight: 600;">Height:</label>
           <input type="range" id="heightSlider" min="63" max="80" value="63" step="1">
           <span class="slider-value" id="heightValue">63 in</span>
         </div>
@@ -156,13 +157,13 @@
           <div class="value" id="heightPredValue">7</div>
           <div>points scored</div>
         </div>
-        <div class="reflection" style="font-size: 12px;">A player can't change their height.</div>
+        <div class="reflection" style="font-size: 16px;">A player can't change their height.</div>
       </div>
       <div class="chart-block">
-        <div class="chart-title">Model 2: Practices Attended vs. Points Scored</div>
-        <svg id="practiceChart" viewBox="0 0 280 260" width="100%" height="230" role="img" aria-label="Scatterplot of points scored versus practices attended, with a regression line"></svg>
+        <div class="chart-title">Model 2: Practices vs. Points Scored</div>
+        <svg id="practiceChart" viewBox="0 0 280 260" width="100%" role="img" aria-label="Scatterplot of points scored versus practices attended, with a regression line"></svg>
         <div class="slider-row">
-          <label for="practiceSlider" style="font-size: 13px; font-weight: 600;">Practices:</label>
+          <label for="practiceSlider" style="font-size: 16px; font-weight: 600;">Practices:</label>
           <input type="range" id="practiceSlider" min="7" max="20" value="7" step="1">
           <span class="slider-value" id="practiceValue">7</span>
         </div>
@@ -171,7 +172,7 @@
           <div class="value" id="practicePredValue">8</div>
           <div>points scored</div>
         </div>
-        <div class="reflection" style="font-size: 12px;">A player can choose to attend more practices.</div>
+        <div class="reflection" style="font-size: 16px;">A player can choose to attend more practices.</div>
       </div>
     </div>
     <div class="reflection">Same players, same points scored, two different stories about what explains it. Which one a coach picks changes what a player can actually do to improve.</div>
@@ -203,8 +204,8 @@
     axisGroup.innerHTML =
       '<line x1="50" y1="260" x2="530" y2="260" stroke="#999" stroke-width="1"></line>' +
       '<line x1="50" y1="30" x2="50" y2="260" stroke="#999" stroke-width="1"></line>' +
-      '<text x="290" y="290" text-anchor="middle" font-size="12" fill="#4C42CF">Temperature (&#176;F)</text>' +
-      '<text x="15" y="150" text-anchor="middle" font-size="12" fill="#4C42CF" transform="rotate(-90 15 150)">Passengers</text>';
+      '<text x="290" y="290" text-anchor="middle" font-size="13" fill="#4C42CF">Temperature (&#176;F)</text>' +
+      '<text x="15" y="150" text-anchor="middle" font-size="13" fill="#4C42CF" transform="rotate(-90 15 150)">Passengers</text>';
     airplaneSvg.appendChild(axisGroup);
 
     airplaneData.forEach(function(pt) {
@@ -308,7 +309,7 @@
     axisGroup.innerHTML =
       '<line x1="40" y1="220" x2="260" y2="220" stroke="#999" stroke-width="1"></line>' +
       '<line x1="40" y1="20" x2="40" y2="220" stroke="#999" stroke-width="1"></line>' +
-      '<text x="150" y="245" text-anchor="middle" font-size="11" fill="#4C42CF">' + xLabel + '</text>';
+      '<text x="150" y="245" text-anchor="middle" font-size="13" fill="#4C42CF">' + xLabel + '</text>';
     svgEl.appendChild(axisGroup);
 
     data.forEach(function(pt) {
