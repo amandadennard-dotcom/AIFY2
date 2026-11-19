@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snack Model Code Explorer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Geist', system-ui, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.5; background: #FFFFFF; color: #222222; padding: 16px; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .instructions { color: #1F1976; background: #F7F7FB; border-left: 4px solid #4C42CF; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; }
+  .code { background: #1F1976; border-radius: 10px; padding: 10px; margin-bottom: 14px; }
+  .block { display: block; width: 100%; text-align: left; font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 16px; line-height: 1.5; color: #FFFFFF; background: transparent; border: 2px solid transparent; border-radius: 6px; padding: 6px 10px; margin: 2px 0; cursor: pointer; white-space: pre-wrap; word-break: break-word; }
+  .block:hover { background: rgba(255,255,255,0.1); }
+  .block:focus-visible { outline: 3px solid #FFFFFF; outline-offset: 1px; }
+  .block[aria-pressed="true"] { background: rgba(172,168,234,0.3); border-color: #ACA8EA; }
+  .cm { color: #CBC8F2; }
+  .hl { background: #FFE3CE; color: #222222; border-radius: 4px; padding: 0 4px; }
+  .explain { background: #F7F7FB; border-left: 4px solid #4C42CF; border-radius: 8px; padding: 12px 14px; min-height: 120px; }
+  .explain .title { font-weight: 700; color: #1F1976; margin-bottom: 4px; }
+  .explain .tip { margin-top: 8px; background: #E4E2F8; border-radius: 8px; padding: 8px 12px; }
+  .explain .watch { margin-top: 8px; background: #FFE3CE; border-radius: 8px; padding: 8px 12px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="instructions">This is the code your students work with in the lab. Select each part of it to see what it does and what to watch for.</div>
+  <div class="code" role="group" aria-label="Student lab code, select a part to explain it">
+    <button type="button" class="block" data-k="imports" aria-pressed="false">from helpers import testing_data, train_model, training_data, visualize_model</button>
+    <button type="button" class="block" data-k="train" aria-pressed="false">predict_top_snacks = train_model(training_data, <span class="hl">"price"</span>)</button>
+    <button type="button" class="block" data-k="predict" aria-pressed="false">predictions = predict_top_snacks(testing_data)</button>
+    <button type="button" class="block" data-k="loop" aria-pressed="false">for i in range(5):
+    print(predictions[i])</button>
+    <button type="button" class="block" data-k="viz" aria-pressed="false">visualize_model(predict_top_snacks)</button>
+  </div>
+  <div class="explain" id="explain"><div class="title">Start anywhere</div>Students change one thing in this program: the highlighted word. Select a line to see what it does.</div>
+  <div id="live" class="sr-only" aria-live="polite"></div>
+</div>
+<script>
+(function(){
+  var info = {
+    imports: {t:'Bringing in the helpers', d:'Your students do not write the machine learning code. The helpers file gives them the training data, the test data, a function that trains a model, and a function that draws it.', tip:'This keeps the lab about decisions, not syntax. Students are choosing what the model should look at.'},
+    train: {t:'Choosing a characteristic', d:'This is the only line students edit. train_model builds a single-variable regression model from the training data, using the characteristic named in quotes to predict the rating. It returns a new function, stored in predict_top_snacks.', tip:'The options are "calories", "shelf_life", "price", "allergen_count", "spice" and "protein". Students try several and compare the results.', watch:'Most common stuck point: the name must match exactly, including the underscore and lowercase letters. "Allergen count" or "shelf life" will not be recognized.'},
+    predict: {t:'Predicting ratings', d:'The trained model is used like a function. Passing it the ten test snacks returns a predicted rating for each one, sorted from highest to lowest.', tip:'Remind students the test snacks have no ratings. Every rating here is a prediction.'},
+    loop: {t:'Printing the top five', d:'Because the predictions are already sorted, the loop prints the first five. Those five are the snacks that would go into the vending machine.', tip:'Change the characteristic, run again, and watch the top five change. That change is the heart of the lesson.'},
+    viz: {t:'Showing the regression line', d:'This draws the model as a scatter plot with its regression line, the same kind of chart students read in the warm up.', tip:'Encourage students to trace the line from left to right before they decide whether a model is a good one to use. That is interpretability in practice.'}
+  };
+  var btns = document.querySelectorAll('.block'), box = document.getElementById('explain'), live = document.getElementById('live');
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){
+      btns.forEach(function(x){ x.setAttribute('aria-pressed', x===b ? 'true' : 'false'); });
+      var i = info[b.dataset.k];
+      box.innerHTML = '';
+      var t = document.createElement('div'); t.className='title'; t.textContent=i.t; box.appendChild(t);
+      var d = document.createElement('div'); d.textContent=i.d; box.appendChild(d);
+      var tip = document.createElement('div'); tip.className='tip'; tip.textContent='Teaching note: '+i.tip; box.appendChild(tip);
+      if (i.watch){ var w = document.createElement('div'); w.className='watch'; w.textContent='Watch for: '+i.watch; box.appendChild(w); }
+      live.textContent = i.t + '. ' + i.d;
+    });
+  });
+})();
+</script>
+</body>
+</html>
