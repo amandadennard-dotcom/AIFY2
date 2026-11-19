@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading a Model and Assigning Responsibility</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Geist', system-ui, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    background-color: #FFFFFF;
+    color: #222222;
+    padding: 16px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .instructions {
+    font-size: 16px;
+    color: #1F1976;
+    background-color: #F7F7FB;
+    border-left: 4px solid #4C42CF;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+  }
+  .step-title { font-size: 16px; font-weight: 700; color: #1F1976; margin-bottom: 8px; }
+  .chart-wrap { text-align: center; margin-bottom: 12px; }
+  .chart-wrap img {
+    width: 100%;
+    max-width: 560px;
+    height: auto;
+    border: 1px solid #E4E2F8;
+    border-radius: 10px;
+    background-color: #FFFFFF;
+  }
+  .prompt { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+  .choice-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .choice-btn {
+    flex: 1 1 140px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 2px solid #ACA8EA;
+    background-color: #FFFFFF;
+    color: #1F1976;
+    cursor: pointer;
+    text-align: center;
+  }
+  .choice-btn:focus-visible, .action-btn:focus-visible { outline: 3px solid #4C42CF; outline-offset: 2px; }
+  .choice-btn.chosen, .choice-btn[aria-pressed="true"] { background-color: #4C42CF; border-color: #4C42CF; color: #FFFFFF; }
+  .choice-btn:disabled { cursor: default; }
+  .feedback {
+    display: none;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+  .feedback.shown { display: block; }
+  .feedback.good { background-color: #CCF1D0; }
+  .feedback.warn { background-color: #FFE3CE; }
+  .feedback.info { background-color: #F7F7FB; border-left: 4px solid #4C42CF; }
+  .feedback + .feedback { margin-top: -4px; }
+  .step2 { display: none; margin-top: 20px; padding-top: 16px; border-top: 1px solid #E4E2F8; }
+  .step2.shown { display: block; }
+  .definition {
+    background-color: #F7F7FB;
+    border-left: 4px solid #4C42CF;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    font-size: 16px;
+  }
+  .option-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .option-btn {
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 2px solid #ACA8EA;
+    background-color: #FFFFFF;
+    color: #1F1976;
+    cursor: pointer;
+    text-align: left;
+  }
+  .option-btn:focus-visible { outline: 3px solid #4C42CF; outline-offset: 2px; }
+  .option-btn[aria-pressed="true"] { background-color: #E4E2F8; border-color: #4C42CF; }
+  .option-btn:disabled { cursor: default; }
+  .result-item { border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 16px; }
+  .result-item.plausible { background-color: #CCF1D0; }
+  .result-item.notmodel { background-color: #FFE3CE; }
+  .result-item .name { font-weight: 700; }
+  .picked-tag {
+    display: inline-block;
+    background-color: #1F1976;
+    color: #FFFFFF;
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 0 8px;
+    margin-left: 6px;
+  }
+  .results { display: none; }
+  .results.shown { display: block; }
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .action-btn {
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+  }
+  .btn-primary { background-color: #4C42CF; color: #FFFFFF; }
+  .btn-secondary { background-color: #FFFFFF; color: #4C42CF; border: 2px solid #4C42CF; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="instructions">Read the model, answer the question, then decide who should be held accountable for what it did.</div>
+
+  <div class="step1">
+    <div class="step-title">Step 1: Read the model</div>
+    <div class="chart-wrap">
+      <img src="snack-rating-vs-price.png" alt="Scatter plot titled rating versus price. Each dot is a snack. A red regression line slopes upward from about a 3.4 rating at 50 cents to about an 8.4 rating at 4 dollars, so higher prices go with higher ratings.">
+    </div>
+    <div class="prompt" id="q1">The school used this model to predict a rating for each snack from its price. If the price of a snack is high, will its predicted rating be high or low?</div>
+    <div class="choice-row" role="group" aria-labelledby="q1">
+      <button type="button" class="choice-btn" id="chooseHigh">High</button>
+      <button type="button" class="choice-btn" id="chooseLow">Low</button>
+    </div>
+    <div class="feedback" id="fbAnswer"></div>
+    <div class="feedback info" id="fbInterp">If the school picked the five highest rated snacks with this model, it would pick the most expensive ones. You could tell that just by looking at the chart. That is <b>interpretability</b>: being able to understand why a model made the decisions it did.</div>
+  </div>
+
+  <div class="step2" id="step2">
+    <div class="step-title">Step 2: Who is accountable?</div>
+    <div class="definition"><b>Accountability</b> is the principle that people should be responsible for a model's decisions and its effects.</div>
+    <div class="prompt" id="q2">After the school used this model, parents complained that the vending machine only had the most expensive snacks. Who should be held accountable? Select every answer you think applies.</div>
+    <div class="option-list" role="group" aria-labelledby="q2">
+      <button type="button" class="option-btn" data-key="builder" aria-pressed="false">The person who built the model</button>
+      <button type="button" class="option-btn" data-key="decider" aria-pressed="false">The person who decided to use the model</button>
+      <button type="button" class="option-btn" data-key="model" aria-pressed="false">The model itself</button>
+    </div>
+    <div class="controls">
+      <button type="button" class="action-btn btn-primary" id="checkBtn">Check my thinking</button>
+      <button type="button" class="action-btn btn-secondary" id="resetBtn">Start over</button>
+    </div>
+
+    <div class="results" id="results">
+      <div class="result-item plausible" data-result="builder"><span class="name">The person who built the model.</span> <span class="picked-tag" hidden>You picked this</span><br>Strong answer. They could see the model was predicting that expensive snacks would be popular.</div>
+      <div class="result-item plausible" data-result="decider"><span class="name">The person who decided to use the model.</span> <span class="picked-tag" hidden>You picked this</span><br>Strong answer. They could see the same thing, and chose to use the model anyway.</div>
+      <div class="result-item notmodel" data-result="model"><span class="name">The model itself.</span> <span class="picked-tag" hidden>You picked this</span><br>Accountability stays with people, not the model. If a student says the model, ask: what would holding a model accountable actually look like?</div>
+      <div class="feedback info shown">Strong answers can name more than one person. If it feels right, ask whether the model's interpretability changes who is accountable.</div>
+    </div>
+  </div>
+
+  <div id="liveRegion" class="sr-only" aria-live="polite"></div>
+</div>
+
+<script>
+(function() {
+  var liveRegion = document.getElementById('liveRegion');
+  var fbAnswer = document.getElementById('fbAnswer');
+  var fbInterp = document.getElementById('fbInterp');
+  var step2 = document.getElementById('step2');
+  var chooseHigh = document.getElementById('chooseHigh');
+  var chooseLow = document.getElementById('chooseLow');
+  var optionBtns = document.querySelectorAll('.option-btn');
+  var results = document.getElementById('results');
+  var checkBtn = document.getElementById('checkBtn');
+
+  function announce(msg) { liveRegion.textContent = msg; }
+
+  function answer(choice) {
+    var btn = choice === 'high' ? chooseHigh : chooseLow;
+    var other = choice === 'high' ? chooseLow : chooseHigh;
+    btn.classList.add('chosen');
+    other.classList.remove('chosen');
+    fbAnswer.classList.add('shown');
+    if (choice === 'high') {
+      fbAnswer.className = 'feedback good shown';
+      fbAnswer.textContent = 'High. Trace the line from left to right: as price goes up, the predicted rating goes up.';
+    } else {
+      fbAnswer.className = 'feedback warn shown';
+      fbAnswer.textContent = 'Not quite. Trace the line from left to right: as price goes up, the predicted rating goes up, so a high price means a high predicted rating.';
+    }
+    fbInterp.classList.add('shown');
+    step2.classList.add('shown');
+    announce(fbAnswer.textContent + ' Step 2 is now available below.');
+  }
+
+  chooseHigh.addEventListener('click', function() { answer('high'); });
+  chooseLow.addEventListener('click', function() { answer('low'); });
+
+  optionBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (btn.disabled) return;
+      var pressed = btn.getAttribute('aria-pressed') === 'true';
+      btn.setAttribute('aria-pressed', pressed ? 'false' : 'true');
+    });
+  });
+
+  checkBtn.addEventListener('click', function() {
+    var picked = {};
+    optionBtns.forEach(function(btn) {
+      picked[btn.dataset.key] = btn.getAttribute('aria-pressed') === 'true';
+      btn.disabled = true;
+    });
+    document.querySelectorAll('[data-result]').forEach(function(item) {
+      var tag = item.querySelector('.picked-tag');
+      tag.hidden = !picked[item.dataset.result];
+    });
+    results.classList.add('shown');
+    checkBtn.disabled = true;
+    announce('Feedback is shown below for all three answers.');
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function() {
+    chooseHigh.classList.remove('chosen');
+    chooseLow.classList.remove('chosen');
+    fbAnswer.className = 'feedback';
+    fbAnswer.textContent = '';
+    fbInterp.classList.remove('shown');
+    step2.classList.remove('shown');
+    results.classList.remove('shown');
+    optionBtns.forEach(function(btn) { btn.disabled = false; btn.setAttribute('aria-pressed', 'false'); });
+    checkBtn.disabled = false;
+    announce('Reset.');
+  });
+})();
+</script>
+</body>
+</html>
