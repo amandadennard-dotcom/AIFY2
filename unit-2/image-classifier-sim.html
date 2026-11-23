@@ -12,16 +12,14 @@
   h1 { font-size: 22px; font-weight: 700; color: #1F1976; margin: 0 0 6px 0; }
   .intro { margin: 0 0 12px 0; }
   .intro a { color: #4C42CF; font-weight: 700; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-  .tab { flex: 1; font-family: inherit; font-size: 16px; font-weight: 700; border-radius: 8px; border: 2px solid #ACA8EA; background: #FFFFFF; color: #1F1976; padding: 8px 12px; cursor: pointer; }
+   .tab { flex: 1; font-family: inherit; font-size: 16px; font-weight: 700; border-radius: 8px; border: 2px solid #ACA8EA; background: #FFFFFF; color: #1F1976; padding: 8px 12px; cursor: pointer; }
   .tab[aria-selected="true"] { background: #4C42CF; border-color: #4C42CF; color: #FFFFFF; }
   .tab:focus-visible, .btn:focus-visible, .pick:focus-visible, a:focus-visible { outline: 3px solid #1F1976; outline-offset: 2px; }
   .panels { display: block; }
-  .panel { display: none; }
-  .panel.active { display: block; }
+  .panel { display: block; }
   .panel-title { font-size: 16px; font-weight: 700; color: #1F1976; margin: 0 0 6px 0; }
-  :root { --zoom: 1.3; }
-  .guide-wrap { position: relative; height: 760px; border: 1px solid #ACA8EA; border-radius: 8px; background: #F7F7FB; overflow: hidden; }
+  :root { --zoom: 1.15; }
+  .guide-wrap { position: relative; height: 560px; border: 1px solid #ACA8EA; border-radius: 8px; background: #F7F7FB; overflow: hidden; }
   .guide-frame { position: absolute; top: 0; left: 0; width: calc(100% / var(--zoom)); height: calc(100% / var(--zoom)); transform: scale(var(--zoom)); transform-origin: top left; border: 0; }
   .pickrow { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
   .pick { font-family: inherit; font-size: 16px; font-weight: 600; border-radius: 8px; border: 2px solid #ACA8EA; background: #FFFFFF; color: #1F1976; padding: 6px 12px; cursor: pointer; }
@@ -43,13 +41,6 @@
   .check.good { display: block; background: #CCF1D0; }
   .check.info { display: block; background: #F7F7FB; border-left: 4px solid #4C42CF; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
-  @media (min-width: 900px) {
-    .tabs { display: none; }
-    .panels { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
-    .panel { display: block; }
-    .panel.panel-guide.active { display: flex; flex-direction: column; align-self: stretch; }
-    .panel-guide .guide-wrap { flex: 1; min-height: 760px; height: auto; }
-  }
 </style>
 </head>
 <body>
@@ -57,18 +48,13 @@
   <h1>Look Through a Finished Project</h1>
   <p class="intro">Compare the finished <a id="guideLink" href="https://docs.google.com/document/d/1ela5mpW_qkhmoFLJD9C9CIRCNg7Ux8l97Mf1fjnViyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Project Planning Guide</a> with the code that came from it.</p>
 
-  <div class="tabs" role="tablist" aria-label="Choose a view">
-    <button type="button" class="tab" role="tab" id="tabGuide" data-panel="guide" aria-selected="true">Project Planning Guide</button>
-    <button type="button" class="tab" role="tab" id="tabCode" data-panel="code" aria-selected="false">Code and Run</button>
-  </div>
-
   <div class="panels">
-    <div class="panel panel-guide active" id="panelGuide" role="tabpanel" aria-labelledby="tabGuide">
+    <div class="panel active" id="panelGuide">
       <div class="panel-title">Project Planning Guide (finished example)</div>
       <div class="guide-wrap"><iframe class="guide-frame" id="guideFrame" src="https://docs.google.com/document/d/1ela5mpW_qkhmoFLJD9C9CIRCNg7Ux8l97Mf1fjnViyI/preview" title="Finished Project Planning Guide for the ocean and river image classifier"></iframe></div>
     </div>
 
-    <div class="panel" id="panelCode" role="tabpanel" aria-labelledby="tabCode">
+    <div class="panel active" id="panelCode" style="margin-top: 20px;">
       <div class="panel-title" id="pickLabel">Pick a test image from the guide</div>
       <div class="pickrow" role="group" aria-labelledby="pickLabel" id="pickRow"></div>
       <div class="code" id="code" role="group" aria-label="Python code"></div>
@@ -206,14 +192,6 @@
   });
   document.getElementById('runBtn').addEventListener('click', run);
   document.getElementById('runAllBtn').addEventListener('click', runAll);
-  // tabs (narrow screens)
-  document.querySelectorAll('.tab').forEach(function(t){
-    t.addEventListener('click', function(){
-      document.querySelectorAll('.tab').forEach(function(x){ x.setAttribute('aria-selected', x === t ? 'true' : 'false'); });
-      document.getElementById('panelGuide').classList.toggle('active', t.dataset.panel === 'guide');
-      document.getElementById('panelCode').classList.toggle('active', t.dataset.panel === 'code');
-    });
-  });
   renderCode();
 })();
 </script>
