@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Look Through a Finished Project</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Geist', system-ui, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.5; background: #FFFFFF; color: #222222; padding: 16px; }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; color: #1F1976; margin: 0 0 6px 0; }
+  .intro { margin: 0 0 12px 0; }
+  .intro a { color: #4C42CF; font-weight: 700; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+  .tab { flex: 1; font-family: inherit; font-size: 16px; font-weight: 700; border-radius: 8px; border: 2px solid #ACA8EA; background: #FFFFFF; color: #1F1976; padding: 8px 12px; cursor: pointer; }
+  .tab[aria-selected="true"] { background: #4C42CF; border-color: #4C42CF; color: #FFFFFF; }
+  .tab:focus-visible, .btn:focus-visible, .pick:focus-visible, a:focus-visible { outline: 3px solid #1F1976; outline-offset: 2px; }
+  .panels { display: block; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .panel-title { font-size: 16px; font-weight: 700; color: #1F1976; margin: 0 0 6px 0; }
+  .guide-frame { width: 100%; height: 520px; border: 1px solid #ACA8EA; border-radius: 8px; background: #F7F7FB; }
+  .pickrow { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .pick { font-family: inherit; font-size: 16px; font-weight: 600; border-radius: 8px; border: 2px solid #ACA8EA; background: #FFFFFF; color: #1F1976; padding: 6px 12px; cursor: pointer; }
+  .pick[aria-pressed="true"] { background: #E4E2F8; border-color: #4C42CF; }
+  .code { background: #1F1976; border-radius: 10px; padding: 12px 0; margin-bottom: 10px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 16px; line-height: 1.55; color: #E4E2F8; overflow: auto; max-height: 420px; position: relative; }
+  .line { display: block; white-space: pre-wrap; word-break: break-word; padding: 0 14px; border-left: 4px solid transparent; }
+  .line.hl { background: rgba(172,168,234,0.3); border-left-color: #FFFFFF; }
+  .k { color: #ACA8EA; font-weight: 700; }
+  .s { color: #6FE07C; }
+  .n { color: #5CC4FF; }
+  .c { color: #CBC8F2; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .btn { font-family: inherit; font-size: 16px; font-weight: 700; border-radius: 8px; padding: 8px 18px; cursor: pointer; border: 2px solid #4C42CF; }
+  .btn-primary { background: #4C42CF; color: #FFFFFF; }
+  .btn-secondary { background: #FFFFFF; color: #4C42CF; }
+  .out { background: #FFFFFF; border: 2px solid #1F1976; border-radius: 8px; padding: 10px 14px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 16px; min-height: 52px; white-space: pre-wrap; word-break: break-word; color: #1F1976; }
+  .out .placeholder { color: #5A5A6A; font-family: 'Geist', system-ui, sans-serif; }
+  .check { margin-top: 8px; border-radius: 8px; padding: 10px 14px; display: none; }
+  .check.good { display: block; background: #CCF1D0; }
+  .check.info { display: block; background: #F7F7FB; border-left: 4px solid #4C42CF; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+  @media (min-width: 900px) {
+    .tabs { display: none; }
+    .panels { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+    .panel { display: block; }
+    .guide-frame { height: 640px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Look Through a Finished Project</h1>
+  <p class="intro">Compare the finished <a id="guideLink" href="https://docs.google.com/document/d/1ela5mpW_qkhmoFLJD9C9CIRCNg7Ux8l97Mf1fjnViyI/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Project Planning Guide</a> with the code that came from it.</p>
+
+  <div class="tabs" role="tablist" aria-label="Choose a view">
+    <button type="button" class="tab" role="tab" id="tabGuide" data-panel="guide" aria-selected="true">Project Planning Guide</button>
+    <button type="button" class="tab" role="tab" id="tabCode" data-panel="code" aria-selected="false">Code and Run</button>
+  </div>
+
+  <div class="panels">
+    <div class="panel active" id="panelGuide" role="tabpanel" aria-labelledby="tabGuide">
+      <div class="panel-title">Project Planning Guide (finished example)</div>
+      <iframe class="guide-frame" id="guideFrame" src="https://docs.google.com/document/d/1ela5mpW_qkhmoFLJD9C9CIRCNg7Ux8l97Mf1fjnViyI/preview" title="Finished Project Planning Guide for the ocean and river image classifier"></iframe>
+    </div>
+
+    <div class="panel" id="panelCode" role="tabpanel" aria-labelledby="tabCode">
+      <div class="panel-title" id="pickLabel">Pick a test image from the guide</div>
+      <div class="pickrow" role="group" aria-labelledby="pickLabel" id="pickRow"></div>
+      <div class="code" id="code" role="group" aria-label="Python code"></div>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="runBtn">&#9654; Run</button>
+        <button type="button" class="btn btn-secondary" id="runAllBtn">Test all 4 images</button>
+      </div>
+      <div class="out" id="out" aria-label="Program output"><span class="placeholder">Output appears here after you run the code.</span></div>
+      <div class="check" id="check"></div>
+    </div>
+  </div>
+  <div id="live" class="sr-only" aria-live="polite"></div>
+</div>
+<script>
+(function(){
+  // Training rows, numbered to match the guide's Step 3 table.
+  var TRAIN = [
+    {n:1,  category:'Ocean', white_waves:true,  trees:false, touch_sky:true},
+    {n:2,  category:'Ocean', white_waves:true,  trees:true,  touch_sky:true},
+    {n:3,  category:'Ocean', white_waves:false, trees:false, touch_sky:true},
+    {n:4,  category:'Ocean', white_waves:true,  trees:false, touch_sky:false},
+    {n:7,  category:'River', white_waves:false, trees:true,  touch_sky:false},
+    {n:8,  category:'River', white_waves:false, trees:false, touch_sky:false},
+    {n:9,  category:'River', white_waves:true,  trees:true,  touch_sky:false},
+    {n:10, category:'River', white_waves:false, trees:true,  touch_sky:true}
+  ];
+  // Test rows from the guide, with the category the guide gives.
+  var TESTS = [
+    {n:5,  guide:'Ocean', white_waves:true,  trees:false, touch_sky:false},
+    {n:6,  guide:'Ocean', white_waves:true,  trees:false, touch_sky:true},
+    {n:11, guide:'River', white_waves:false, trees:true,  touch_sky:false},
+    {n:12, guide:'River', white_waves:true,  trees:true,  touch_sky:false}
+  ];
+  var FEATS = ['white_waves','trees','touch_sky'];
+  var sel = TESTS[3];
+
+  function py(b){ return b ? 'True' : 'False'; }
+  function dict2(o, withCat, indent){
+    var a = withCat ? '{"category": "' + o.category + '", "white_waves": ' + py(o.white_waves) + ',' : '{"white_waves": ' + py(o.white_waves) + ', "trees": ' + py(o.trees) + ',';
+    var b = withCat ? ' "trees": ' + py(o.trees) + ', "touch_sky": ' + py(o.touch_sky) + '}' : ' "touch_sky": ' + py(o.touch_sky) + '}';
+    return [indent + a, indent + (withCat ? ' ' : ' ') + b.trim()];
+  }
+  function esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hi(t){
+    t = esc(t);
+    var out = '', i = t.indexOf('#');
+    var code = i === -1 ? t : t.slice(0,i), cm = i === -1 ? '' : t.slice(i);
+    code = code.replace(/(&quot;|")([^"]*)(")/g, '<span class="s">"$2"</span>');
+    code = code.replace(/\b(from|import|def|if|return|print)\b/g, '<span class="k">$1</span>');
+    code = code.replace(/\b(True|False)\b/g, '<span class="n">$1</span>');
+    code = code.replace(/\b(\d+)\b/g, '<span class="n">$1</span>');
+    return code + (cm ? '<span class="c">' + cm + '</span>' : '');
+  }
+  function buildLines(){
+    var L = [];
+    L.push({t:'from helpers import predict_category'});
+    L.push({t:''});
+    L.push({t:'training_images = ['});
+    TRAIN.forEach(function(r){
+      L.push({t:'  # Image ' + r.n + ' in the guide'});
+      var d = dict2(r,true,'  ');
+      L.push({t:d[0]});
+      L.push({t:d[1] + ','});
+    });
+    L.push({t:']'});
+    L.push({t:''});
+    L.push({t:''});
+    L.push({t:'def distance(image1, image2):'});
+    L.push({t:'  differences = 0'});
+    FEATS.forEach(function(f){
+      L.push({t:'  if image1["' + f + '"] != image2["' + f + '"]:'});
+      L.push({t:'    differences += 1'});
+    });
+    L.push({t:'  return differences'});
+    L.push({t:''});
+    L.push({t:'# Image ' + sel.n + ' in the guide', hl:true});
+    var td = dict2(sel,false,'');
+    L.push({t:'test_image = ' + td[0], hl:true});
+    L.push({t:'              ' + td[1].trim(), hl:true});
+    L.push({t:''});
+    L.push({t:'prediction = predict_category(test_image, training_images, distance)'});
+    L.push({t:'print(f"Predicted category for test image: {prediction}")'});
+    return L;
+  }
+  var codeEl = document.getElementById('code'), outEl = document.getElementById('out'), checkEl = document.getElementById('check'), live = document.getElementById('live');
+  function renderCode(){
+    codeEl.innerHTML = '';
+    buildLines().forEach(function(l){
+      var s = document.createElement('span'); s.className = 'line' + (l.hl ? ' hl' : '');
+      s.innerHTML = l.t ? hi(l.t) : '&nbsp;'; codeEl.appendChild(s);
+    });
+  }
+  function distance(a,b){ var d = 0; FEATS.forEach(function(f){ if (a[f] !== b[f]) d++; }); return d; }
+  function predict(t){
+    var best = null;
+    TRAIN.forEach(function(r){ var d = distance(t,r); if (best === null || d < best.d) best = {row:r, d:d}; });
+    return best;
+  }
+  function clear(){
+    outEl.innerHTML = '<span class="placeholder">Output appears here after you run the code.</span>';
+    checkEl.className = 'check'; checkEl.textContent = '';
+  }
+  function say(t){ live.textContent = t; }
+  function run(){
+    var p = predict(sel);
+    outEl.textContent = 'Predicted category for test image: ' + p.row.category;
+    var ok = p.row.category === sel.guide;
+    checkEl.className = 'check ' + (ok ? 'good' : 'info');
+    checkEl.textContent = 'The guide says image ' + sel.n + ' is a ' + sel.guide + '. ' + (ok ? 'The prediction matches.' : 'The prediction does not match.') + ' The closest training image is image ' + p.row.n + ', a ' + p.row.category + ', with a distance of ' + p.d + '.';
+    say(outEl.textContent + '. ' + checkEl.textContent);
+  }
+  function runAll(){
+    var lines = [], right = 0;
+    TESTS.forEach(function(t){
+      var p = predict(t), ok = p.row.category === t.guide; if (ok) right++;
+      lines.push('Image ' + t.n + ': ' + p.row.category + (ok ? ' (matches the guide)' : ' (guide says ' + t.guide + ')'));
+    });
+    lines.push(''); lines.push(right + ' of ' + TESTS.length + ' test images correct');
+    outEl.textContent = lines.join('\n');
+    checkEl.className = 'check info';
+    checkEl.textContent = 'This is what Level 5 asks students to do: run the classifier on every test image and count how many it gets right.';
+    say(right + ' of ' + TESTS.length + ' test images correct.');
+  }
+  // pick buttons
+  var row = document.getElementById('pickRow');
+  TESTS.forEach(function(t){
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'pick'; b.textContent = 'Image ' + t.n; b.dataset.n = t.n;
+    b.setAttribute('aria-pressed', t === sel ? 'true' : 'false');
+    b.addEventListener('click', function(){
+      sel = t;
+      row.querySelectorAll('.pick').forEach(function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      renderCode(); var h = codeEl.querySelector('.hl'); if (h) codeEl.scrollTop = Math.max(0, h.offsetTop - 80); clear(); say('Test image set to image ' + t.n + '. Press Run.');
+    });
+    row.appendChild(b);
+  });
+  document.getElementById('runBtn').addEventListener('click', run);
+  document.getElementById('runAllBtn').addEventListener('click', runAll);
+  // tabs (narrow screens)
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(function(x){ x.setAttribute('aria-selected', x === t ? 'true' : 'false'); });
+      document.getElementById('panelGuide').classList.toggle('active', t.dataset.panel === 'guide');
+      document.getElementById('panelCode').classList.toggle('active', t.dataset.panel === 'code');
+    });
+  });
+  renderCode();
+})();
+</script>
+</body>
+</html>
