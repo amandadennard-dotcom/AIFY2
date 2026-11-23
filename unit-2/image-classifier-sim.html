@@ -20,11 +20,13 @@
   .panel { display: none; }
   .panel.active { display: block; }
   .panel-title { font-size: 16px; font-weight: 700; color: #1F1976; margin: 0 0 6px 0; }
-  .guide-frame { width: 100%; height: 520px; border: 1px solid #ACA8EA; border-radius: 8px; background: #F7F7FB; }
+  :root { --zoom: 1.3; }
+  .guide-wrap { position: relative; height: 760px; border: 1px solid #ACA8EA; border-radius: 8px; background: #F7F7FB; overflow: hidden; }
+  .guide-frame { position: absolute; top: 0; left: 0; width: calc(100% / var(--zoom)); height: calc(100% / var(--zoom)); transform: scale(var(--zoom)); transform-origin: top left; border: 0; }
   .pickrow { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
   .pick { font-family: inherit; font-size: 16px; font-weight: 600; border-radius: 8px; border: 2px solid #ACA8EA; background: #FFFFFF; color: #1F1976; padding: 6px 12px; cursor: pointer; }
   .pick[aria-pressed="true"] { background: #E4E2F8; border-color: #4C42CF; }
-  .code { background: #1F1976; border-radius: 10px; padding: 12px 0; margin-bottom: 10px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 16px; line-height: 1.55; color: #E4E2F8; overflow: auto; max-height: 420px; position: relative; }
+  .code { background: #1F1976; border-radius: 10px; padding: 12px 0; margin-bottom: 10px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 16px; line-height: 1.55; color: #E4E2F8; overflow-x: auto; position: relative; }
   .line { display: block; white-space: pre-wrap; word-break: break-word; padding: 0 14px; border-left: 4px solid transparent; }
   .line.hl { background: rgba(172,168,234,0.3); border-left-color: #FFFFFF; }
   .k { color: #ACA8EA; font-weight: 700; }
@@ -45,7 +47,8 @@
     .tabs { display: none; }
     .panels { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
     .panel { display: block; }
-    .guide-frame { height: 640px; }
+    .panel.panel-guide.active { display: flex; flex-direction: column; align-self: stretch; }
+    .panel-guide .guide-wrap { flex: 1; min-height: 760px; height: auto; }
   }
 </style>
 </head>
@@ -60,9 +63,9 @@
   </div>
 
   <div class="panels">
-    <div class="panel active" id="panelGuide" role="tabpanel" aria-labelledby="tabGuide">
+    <div class="panel panel-guide active" id="panelGuide" role="tabpanel" aria-labelledby="tabGuide">
       <div class="panel-title">Project Planning Guide (finished example)</div>
-      <iframe class="guide-frame" id="guideFrame" src="https://docs.google.com/document/d/1ela5mpW_qkhmoFLJD9C9CIRCNg7Ux8l97Mf1fjnViyI/preview" title="Finished Project Planning Guide for the ocean and river image classifier"></iframe>
+      <div class="guide-wrap"><iframe class="guide-frame" id="guideFrame" src="https://docs.google.com/document/d/1ela5mpW_qkhmoFLJD9C9CIRCNg7Ux8l97Mf1fjnViyI/preview" title="Finished Project Planning Guide for the ocean and river image classifier"></iframe></div>
     </div>
 
     <div class="panel" id="panelCode" role="tabpanel" aria-labelledby="tabCode">
@@ -197,7 +200,7 @@
     b.addEventListener('click', function(){
       sel = t;
       row.querySelectorAll('.pick').forEach(function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
-      renderCode(); var h = codeEl.querySelector('.hl'); if (h) codeEl.scrollTop = Math.max(0, h.offsetTop - 80); clear(); say('Test image set to image ' + t.n + '. Press Run.');
+      renderCode(); clear(); say('Test image set to image ' + t.n + '. Press Run.');
     });
     row.appendChild(b);
   });
