@@ -155,6 +155,8 @@
     line-height: 1.5;
   }
   .decision-reveal.shown { display: block; }
+  .decision-reveal.warn { background-color: #FFE3CE; border-left-color: #F46800; }
+  .decision-reveal.good { background-color: #CCF1D0; border-left-color: #34BD43; }
   .decision-reveal .extension {
     margin-top: 8px;
     padding-top: 8px;
@@ -203,7 +205,7 @@
       <button type="button" class="choice-btn" id="chooseModel2">Model 2</button>
     </div>
     <div class="decision-reveal" id="decisionReveal">
-      <div>We'd use Model 2, because it's safer. Model 1 might hit bikers, it's more accurate on this set of photos, but it misses exactly the categories a car can't afford to miss.</div>
+      <div id="decisionMain"></div>
       <div class="extension">Now go further: telling pedestrians apart from everything else is only one goal. If you were building this model from scratch, how would you improve it? There are other reasons a self-driving car should stop, it should also avoid bikers and stop at traffic lights, not just people on foot.</div>
     </div>
   </div>
@@ -279,19 +281,21 @@
     liveRegion.textContent = 'Showing Model 2 classifications. Three photos changed from not pedestrian to pedestrian.';
   });
 
-  document.getElementById('chooseModel1').addEventListener('click', function() {
-    this.classList.add('chosen');
-    document.getElementById('chooseModel2').classList.remove('chosen');
-    document.getElementById('decisionReveal').classList.add('shown');
-    liveRegion.textContent = 'You chose Model 1. Reveal shown below.';
-  });
-
-  document.getElementById('chooseModel2').addEventListener('click', function() {
-    this.classList.add('chosen');
-    document.getElementById('chooseModel1').classList.remove('chosen');
-    document.getElementById('decisionReveal').classList.add('shown');
-    liveRegion.textContent = 'You chose Model 2. Reveal shown below.';
-  });
+  var ANSWERS = {
+    1: { cls: 'warn', text: "You picked Model 1. It's tempting because it looks cleaner: it doesn't call cars on a crosswalk a pedestrian. But look at what it misses. It doesn't flag the person on the bicycle or the person on the motorcycle, and a self-driving car relying on it wouldn't stop for them. Accuracy alone doesn't tell you which kinds of mistakes a model makes. For this job, Model 2 is the safer choice." },
+    2: { cls: 'good', text: "You picked Model 2, the safer choice. It does make a mistake, calling cars on a crosswalk a pedestrian, but that mistake only makes the car stop when it didn't need to. It catches the person on the bicycle and the person on the motorcycle, the misses a car can't afford." }
+  };
+  function choose(n) {
+    var a = ANSWERS[n], box = document.getElementById('decisionReveal');
+    document.getElementById('chooseModel' + n).classList.add('chosen');
+    document.getElementById('chooseModel' + (n === 1 ? 2 : 1)).classList.remove('chosen');
+    box.classList.remove('warn', 'good');
+    box.classList.add('shown', a.cls);
+    document.getElementById('decisionMain').textContent = a.text;
+    liveRegion.textContent = a.text;
+  }
+  document.getElementById('chooseModel1').addEventListener('click', function() { choose(1); });
+  document.getElementById('chooseModel2').addEventListener('click', function() { choose(2); });
 
   render();
 })();
