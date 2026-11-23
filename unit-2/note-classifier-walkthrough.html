@@ -38,7 +38,7 @@
 <div class="wrap">
   <div class="instructions" id="instr"></div>
 
-  <h2 id="pickLabel">Pick a note</h2>
+  <h2 id="pickLabel">Pick an instrument</h2>
   <div class="row" role="group" aria-labelledby="pickLabel">
     <button type="button" class="pick" data-note="cello" aria-pressed="true">Cello</button>
     <button type="button" class="pick" data-note="violin" aria-pressed="false">Violin</button>
@@ -94,7 +94,7 @@
   var state = { note:'cello', step:1, key:null, fcut:400, bcut:30 };
   var code = document.getElementById('code'), explain = document.getElementById('explain'), live = document.getElementById('live');
   var INSTR = {
-    1: 'Pick a note, then read its features back out of the dictionary.',
+    1: 'Pick an instrument note, then read its features back out of the dictionary.',
     2: 'Move the cutoff and watch which line of the conditional runs.',
     3: 'Nest a second conditional inside the first, then move both cutoffs.'
   };
