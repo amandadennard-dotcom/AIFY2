@@ -96,6 +96,9 @@
   .result-item.plausible { background-color: #CCF1D0; }
   .result-item.notmodel { background-color: #FFE3CE; }
   .result-item .name { font-weight: 700; }
+  .group-label { font-size: 16px; font-weight: 700; color: #1F1976; margin: 12px 0 6px 0; }
+  .group-label[hidden] { display: none; }
+  .result-item.mine { border: 3px solid #1F1976; }
   .picked-tag {
     display: inline-block;
     background-color: #1F1976;
@@ -156,10 +159,16 @@
     </div>
 
     <div class="results" id="results">
-      <div class="result-item plausible" data-result="builder"><span class="name">The person who built the model.</span> <span class="picked-tag" hidden>You picked this</span><br>Strong answer. They could see the model was predicting that expensive snacks would be popular.</div>
-      <div class="result-item plausible" data-result="decider"><span class="name">The person who decided to use the model.</span> <span class="picked-tag" hidden>You picked this</span><br>Strong answer. They could see the same thing, and chose to use the model anyway.</div>
-      <div class="result-item notmodel" data-result="model"><span class="name">The model itself.</span> <span class="picked-tag" hidden>You picked this</span><br>Accountability stays with people, not the model. If a student says the model, ask: what would holding a model accountable actually look like?</div>
+      <div class="group-label" id="labelYours">Your answer</div>
+      <div id="yours"></div>
+      <div class="group-label" id="labelOthers">Other answers to consider</div>
+      <div id="others"></div>
       <div class="feedback info shown">Strong answers can name more than one person. If it feels right, ask whether the model's interpretability changes who is accountable.</div>
+    </div>
+    <div id="pool" hidden>
+      <div class="result-item plausible" data-result="builder"><span class="name">The person who built the model.</span><br>Strong answer. They could see the model was predicting that expensive snacks would be popular.</div>
+      <div class="result-item plausible" data-result="decider"><span class="name">The person who decided to use the model.</span><br>Strong answer. They could see the same thing, and chose to use the model anyway.</div>
+      <div class="result-item notmodel" data-result="model"><span class="name">The model itself.</span><br>Accountability stays with people, not the model. If a student says the model, ask: what would holding a model accountable actually look like?</div>
     </div>
   </div>
 
@@ -210,18 +219,22 @@
   });
 
   checkBtn.addEventListener('click', function() {
-    var picked = {};
-    optionBtns.forEach(function(btn) {
-      picked[btn.dataset.key] = btn.getAttribute('aria-pressed') === 'true';
-      btn.disabled = true;
+    var picked = [];
+    optionBtns.forEach(function(btn) { if (btn.getAttribute('aria-pressed') === 'true') picked.push(btn.dataset.key); });
+    if (!picked.length) { announce('Select at least one answer first.'); return; }
+    optionBtns.forEach(function(btn) { btn.disabled = true; });
+    var yours = document.getElementById('yours'), others = document.getElementById('others'), pool = document.getElementById('pool');
+    ['builder','decider','model'].forEach(function(k) {
+      var item = document.querySelector('[data-result="' + k + '"]');
+      var mine = picked.indexOf(k) !== -1;
+      item.classList.toggle('mine', mine);
+      (mine ? yours : others).appendChild(item);
     });
-    document.querySelectorAll('[data-result]').forEach(function(item) {
-      var tag = item.querySelector('.picked-tag');
-      tag.hidden = !picked[item.dataset.result];
-    });
+    document.getElementById('labelYours').hidden = !yours.children.length;
+    document.getElementById('labelOthers').hidden = !others.children.length;
     results.classList.add('shown');
     checkBtn.disabled = true;
-    announce('Feedback is shown below for all three answers.');
+    announce('Feedback is shown below. Your answers are listed first, then the other answers to consider.');
   });
 
   document.getElementById('resetBtn').addEventListener('click', function() {
@@ -232,6 +245,7 @@
     fbInterp.classList.remove('shown');
     step2.classList.remove('shown');
     results.classList.remove('shown');
+    ['builder','decider','model'].forEach(function(k) { var it = document.querySelector('[data-result="' + k + '"]'); it.classList.remove('mine'); document.getElementById('pool').appendChild(it); });
     optionBtns.forEach(function(btn) { btn.disabled = false; btn.setAttribute('aria-pressed', 'false'); });
     checkBtn.disabled = false;
     announce('Reset.');
