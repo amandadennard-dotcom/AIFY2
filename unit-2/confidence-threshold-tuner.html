@@ -16,35 +16,35 @@
     color: #1a1a1a;
     padding: 1.25rem 1.5rem 2rem;
     line-height: 1.5;
-    max-width: 560px;
+    max-width: 600px;
     margin: 0 auto;
   }
   h1 { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; color: #1F1976; margin-bottom: 10px; }
   .directions { background: #D5EFFF; border-radius: 10px; padding: 13px 16px; margin-bottom: 1.25rem; font-size: 16px; color: #06338D; line-height: 1.6; }
 
-  .legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-bottom: 1rem; font-size: 12px; color: #333; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-bottom: 1rem; font-size: 16px; color: #222222; }
   .legend-item { display: flex; align-items: center; gap: 6px; }
-  .legend-swatch { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; }
-  .legend-ring { width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px #4C42CF; flex-shrink: 0; }
+  .legend-swatch { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; }
+  .legend-ring { width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 4px solid #4C42CF; flex-shrink: 0; }
 
-  .berry-row { display: flex; gap: 10px; margin-bottom: 0.4rem; flex-wrap: wrap; justify-content: center; }
+  .berry-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 10px; margin-bottom: 0.4rem; justify-items: center; }
   .berry-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .berry {
-    width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; color: #fff; position: relative; transition: background 0.2s, transform 0.2s;
+    width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #fff; position: relative; transition: background 0.2s, transform 0.2s;
   }
-  .berry.flagged { transform: scale(1.12); }
-  .berry-caption { font-size: 10px; font-weight: 700; color: #555; white-space: nowrap; text-align: center; }
+  .berry.flagged { outline: 4px solid #4C42CF; outline-offset: 3px; }
+  .berry-caption { font-size: 16px; font-weight: 700; color: #222222; white-space: nowrap; text-align: center; line-height: 1.3; }
   .berry-caption .flagged-text { color: #4C42CF; }
 
   .slider-wrap { margin: 1.25rem 0; }
-  .slider-label { font-size: 14px; font-weight: 700; color: #1F1976; margin-bottom: 8px; text-align: center; }
+  .slider-label { font-size: 18px; font-weight: 700; color: #1F1976; margin-bottom: 8px; text-align: center; }
   input[type="range"] { width: 100%; accent-color: #4C42CF; }
 
   .result-row { display: flex; gap: 16px; margin-bottom: 1rem; }
   .result-box { flex: 1; background: #FFFFFF; border: 1px solid #E4E2F8; border-radius: 10px; padding: 12px; text-align: center; }
-  .result-label { font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
-  .result-value { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: #1F1976; }
+  .result-label { font-size: 16px; font-weight: 700; color: #222222; text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px; }
+  .result-value { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; color: #1F1976; }
 
   .summary-box { background-color: #D5EFFF; border-radius: 10px; padding: 16px 18px; margin-top: 1rem; font-size: 16px; color: #06338D; line-height: 1.6; }
   .sr-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
@@ -110,7 +110,7 @@ function renderBerries(threshold) {
     const color = b.actuallyToxic ? '#611D00' : '#003F25';
     const label = 'Berry ' + (i + 1) + ': ' + b.conf + '% confidence, actually ' + (b.actuallyToxic ? 'toxic' : 'not toxic') + (flagged ? ', currently flagged as toxic' : ', currently not flagged');
     return `<div class="berry-wrap">
-      <div class="berry${flagged ? ' flagged' : ''}" style="background:${color}; ${flagged ? 'box-shadow:0 0 0 3px #4C42CF;' : ''}" title="${label}" aria-label="${label}">
+      <div class="berry${flagged ? ' flagged' : ''}" style="background:${color};" title="${label}" aria-label="${label}">
         ${b.conf}%
       </div>
       <div class="berry-caption">Berry ${i + 1}${flagged ? '<br><span class="flagged-text">flagged</span>' : ''}</div>
