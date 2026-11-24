@@ -55,7 +55,7 @@
   .stage-dot.done { background: #4C42CF; }
   .stage-dot.current { background: #ACA8EA; }
   .stage-label {
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 700;
     color: #4C42CF;
     margin-bottom: 1rem;
@@ -76,7 +76,7 @@
 
   .tok {
     cursor: pointer;
-    border-bottom: 2px dotted #7A74C4;
+    border-bottom: 3px solid #34BD43;
     border-radius: 3px;
     padding: 1px 2px;
     transition: background 0.15s, color 0.15s;
@@ -117,17 +117,17 @@
   .label-card strong { color: #1F1976; }
 
   .hint {
-    font-size: 13px;
-    color: #999;
+    font-size: 16px;
+    color: #555555;
     font-style: italic;
     margin-bottom: 16px;
   }
 
   /* ── Console ── */
   .console-label {
-    font-size: 12px;
+    font-size: 16px;
     font-weight: 700;
-    color: #6c7086;
+    color: #555555;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     margin-bottom: 6px;
@@ -154,7 +154,7 @@
   }
   .btn {
     font-family: inherit;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     border-radius: 8px;
     padding: 10px 22px;
@@ -180,7 +180,7 @@
 
   .reset-wrap { margin-top: 1.5rem; text-align: right; }
   .reset-btn {
-    font-size: 13px;
+    font-size: 16px;
     color: #4C42CF;
     cursor: pointer;
     background: none;
@@ -222,7 +222,7 @@
 <h1>Reading Python Line by Line</h1>
 
 <div class="directions" role="note">
-  <strong>How this works:</strong> Click each highlighted part of the code to see what it does. Once every part in a stage is labeled, press Run to see the actual console output.
+  <strong>How this works:</strong> Click each underlined part of the code to see what it does. Once every part in a stage is labeled, press Run to see the actual console output.
 </div>
 
 <div class="stage-tracker" id="stage-tracker" aria-hidden="true"></div>
@@ -333,7 +333,7 @@ function renderStage() {
   stageArea.innerHTML = `
     <div class="code-block" role="img" aria-label="Python code for ${stage.title}">${codeHTML}</div>
     <div class="labels-wrap">${labelsHTML}</div>
-    ${!allClicked ? '<div class="hint">Click every highlighted part above to unlock Run.</div>' : ''}
+    ${!allClicked ? '<div class="hint">Click every underlined part above to unlock Run.</div>' : ''}
     <div class="console-label">&#9656; Console</div>
     <div class="console" id="console-box">${consoleHTML}</div>
     <div class="controls">
