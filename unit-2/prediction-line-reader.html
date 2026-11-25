@@ -94,8 +94,21 @@
     padding: 12px;
     text-align: center;
   }
-  .result-label { font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .result-label { font-size: 16px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
   .result-value { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: #1F1976; }
+
+  .math-box {
+    background: #F7F7FB;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 1rem;
+  }
+  .math-title { font-size: 16px; font-weight: 700; color: #1F1976; margin-bottom: 8px; }
+  .math-eq { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: #1F1976; margin-bottom: 10px; line-height: 1.6; }
+  .math-key { font-size: 16px; color: #222222; line-height: 1.5; margin-top: 6px; }
+  .chip { display: inline-block; font-weight: 700; padding: 0 8px; border-radius: 6px; }
+  .chip-m { background: #E4E2F8; color: #1F1976; border: 2px solid #4C42CF; }
+  .chip-b { background: #CCF1D0; color: #003F25; border: 2px solid #34BD43; }
 
   .summary-box {
     background-color: #D5EFFF;
@@ -117,31 +130,33 @@
 <h1>Reading a Prediction Line</h1>
 
 <div class="directions" role="note">
-  <strong>How this works:</strong> Use the buttons to change Miles. Watch the dashed lines trace from the x-axis up to the prediction line, then across to the Cost.
+  <strong>How this works:</strong> Use the buttons to change Miles. Watch the dashed lines trace from the x-axis up to the prediction line, then across to the Cost. The math box below shows the calculation behind each prediction.
 </div>
 
 <div class="chart-wrap">
-  <svg viewBox="0 0 280 230" width="100%" role="img" aria-label="Graph titled Interpreting a Prediction Line, with Miles from 0 to 5 on the x-axis and Cost in dollars from 0 to 12 on the y-axis">
+  <svg viewBox="0 0 280 240" width="100%" role="img" aria-label="Graph titled Interpreting a Prediction Line, with Miles from 0 to 5 on the x-axis and Cost in dollars from 0 to 12 on the y-axis">
     <line x1="40" y1="20" x2="40" y2="200" stroke="#1a1a1a" stroke-width="1.5"/>
     <line x1="40" y1="200" x2="260" y2="200" stroke="#1a1a1a" stroke-width="1.5"/>
 
-    <text x="10" y="24" font-size="10" fill="#555">$12</text>
-    <text x="10" y="79" font-size="10" fill="#555">$9</text>
-    <text x="10" y="134" font-size="10" fill="#555">$6</text>
-    <text x="10" y="189" font-size="10" fill="#555">$3</text>
-    <text x="14" y="204" font-size="10" fill="#555">$0</text>
+    <text x="28" y="24" font-size="13" fill="#555" text-anchor="end">$12</text>
+    <text x="28" y="69" font-size="13" fill="#555" text-anchor="end">$9</text>
+    <text x="28" y="114" font-size="13" fill="#555" text-anchor="end">$6</text>
+    <text x="28" y="159" font-size="13" fill="#555" text-anchor="end">$3</text>
+    <text x="28" y="204" font-size="13" fill="#555" text-anchor="end">$0</text>
 
-    <text x="38" y="216" font-size="10" fill="#555">0</text>
-    <text x="78" y="216" font-size="10" fill="#555">1</text>
-    <text x="118" y="216" font-size="10" fill="#555">2</text>
-    <text x="158" y="216" font-size="10" fill="#555">3</text>
-    <text x="198" y="216" font-size="10" fill="#555">4</text>
-    <text x="238" y="216" font-size="10" fill="#555">5</text>
-    <text x="130" y="228" font-size="11" fill="#1F1976" font-weight="700">Miles</text>
+    <text x="40" y="218" font-size="13" fill="#555" text-anchor="middle">0</text>
+    <text x="84" y="218" font-size="13" fill="#555" text-anchor="middle">1</text>
+    <text x="128" y="218" font-size="13" fill="#555" text-anchor="middle">2</text>
+    <text x="172" y="218" font-size="13" fill="#555" text-anchor="middle">3</text>
+    <text x="216" y="218" font-size="13" fill="#555" text-anchor="middle">4</text>
+    <text x="260" y="218" font-size="13" fill="#555" text-anchor="middle">5</text>
+    <text x="150" y="234" font-size="14" text-anchor="middle" fill="#1F1976" font-weight="700">Miles</text>
 
     <!-- prediction line, drawn from the same formula the dot uses, so they always match -->
     <line id="prediction-line" stroke="#4C42CF" stroke-width="3"/>
 
+    <circle cx="40" cy="155" r="7" fill="#CCF1D0" stroke="#34BD43" stroke-width="3"/>
+    <text x="54" y="178" font-size="13" fill="#003F25" font-weight="700" stroke="#F7F7FB" stroke-width="4" paint-order="stroke">starts at $3</text>
     <g id="guides"></g>
     <circle id="point" r="6" fill="#1F1976"/>
   </svg>
@@ -162,6 +177,13 @@
     <div class="result-label">Predicted Cost</div>
     <div class="result-value" id="cost-value">&#36;3.00</div>
   </div>
+</div>
+
+<div class="math-box">
+  <div class="math-title">The math behind it</div>
+  <div class="math-eq" id="math-eq"></div>
+  <div class="math-key"><span class="chip chip-m">1.5</span> slope: the cost goes up &#36;1.50 for each extra mile</div>
+  <div class="math-key"><span class="chip chip-b">3</span> y-intercept: the cost when Miles is 0, where the line starts</div>
 </div>
 
 <div id="summary-area"></div>
@@ -203,6 +225,7 @@ function render() {
   document.getElementById('miles-readout').textContent = 'Miles: ' + miles;
   document.getElementById('miles-value').textContent = miles;
   document.getElementById('cost-value').textContent = '$' + cost.toFixed(2);
+  document.getElementById('math-eq').innerHTML = 'Cost = <span class="chip chip-m">1.5</span> &times; ' + miles + ' + <span class="chip chip-b">3</span> = $' + cost.toFixed(2);
 
   document.getElementById('btn-minus').disabled = (miles <= MIN);
   document.getElementById('btn-plus').disabled = (miles >= MAX);
@@ -222,7 +245,7 @@ function step(dir) {
   miles = next;
   render();
   const cost = predictCost(miles);
-  announce('Miles: ' + miles + '. Predicted cost: $' + cost.toFixed(2) + '.');
+  announce('Miles: ' + miles + '. Cost equals 1.5 times ' + miles + ' plus 3, which is $' + cost.toFixed(2) + '.');
 
   if (miles === MAX) {
     showSummary();
@@ -232,7 +255,7 @@ function step(dir) {
 function showSummary() {
   document.getElementById('summary-area').innerHTML = `
     <div class="summary-box">
-      <strong>&#128161; Notice the pattern:</strong> every time Miles goes up by 1, the predicted Cost goes up by exactly $1.50, that's the slope. At Miles = 0, the line predicts $3.00, the y-intercept. The whole line is just y = 1.5x + 3.
+      <strong>&#128161; Notice the pattern:</strong> every time Miles goes up by 1, the predicted Cost goes up by exactly $1.50, that's the slope. At Miles = 0, the line predicts $3.00, the y-intercept. The whole line is just y = 1.5x + 3, the same y = mx + b form you may know from algebra.
     </div>
   `;
   announce('Reached the maximum input. See the pattern summary below.');
