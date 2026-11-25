@@ -40,7 +40,7 @@
   }
 
   .step-label {
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 700;
     color: #4C42CF;
     margin-bottom: 10px;
@@ -82,39 +82,53 @@
   }
 
   .side-col {
-    width: 140px;
+    width: 190px;
     display: flex;
     flex-direction: column;
     gap: 12px;
   }
 
   .i-tracker {
-    background: #F5F4FD;
-    border: 1.5px solid #E4E2F8;
+    background: #FFFFFF;
+    border: 2px solid #4C42CF;
     border-radius: 10px;
-    padding: 12px;
+    overflow: hidden;
     text-align: center;
+    transition: background 0.25s, border-color 0.25s;
   }
   .i-tracker-label {
-    font-size: 12px;
+    background: #4C42CF;
+    color: #FFFFFF;
+    font-size: 16px;
     font-weight: 700;
-    color: #4C42CF;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 6px;
+    padding: 6px 8px;
   }
   .i-tracker-value {
     font-family: 'Fira Code', 'Consolas', monospace;
-    font-size: 22px;
+    font-size: 32px;
     font-weight: 700;
     color: #1F1976;
+    padding: 12px 8px 4px;
+    line-height: 1.2;
   }
-  .i-tracker-value.empty { color: #ACA8EA; font-size: 14px; font-weight: 500; }
+  .i-tracker-value.empty { color: #ACA8EA; }
+  .i-tracker-note {
+    font-size: 16px;
+    line-height: 1.4;
+    color: #222222;
+    padding: 4px 10px 12px;
+    min-height: 66px;
+  }
+  .i-tracker.fresh { background: #CCF1D0; border-color: #34BD43; }
+  .i-token {
+    border-bottom: 3px solid #34BD43;
+    padding: 0 2px;
+  }
 
   .console-label {
-    font-size: 12px;
+    font-size: 16px;
     font-weight: 700;
-    color: #6c7086;
+    color: #555555;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     margin-bottom: 6px;
@@ -124,12 +138,12 @@
     border-radius: 10px;
     padding: 12px 14px;
     font-family: 'Fira Code', 'Consolas', monospace;
-    font-size: 15px;
+    font-size: 16px;
     color: #a6e3a1;
     min-height: 140px;
     line-height: 1.7;
   }
-  .console .empty-note { color: #6c7086; font-style: italic; font-size: 13px; }
+  .console .empty-note { color: #B8B8C8; font-style: italic; font-size: 16px; }
 
   .status-line {
     background: #F7F7FB;
@@ -151,7 +165,7 @@
   }
   .btn {
     font-family: inherit;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     border-radius: 8px;
     padding: 10px 22px;
@@ -176,7 +190,7 @@
 
   .reset-wrap { margin-top: 1.25rem; text-align: right; }
   .reset-btn {
-    font-size: 13px;
+    font-size: 16px;
     color: #4C42CF;
     cursor: pointer;
     background: none;
@@ -214,6 +228,7 @@
     .layout { flex-direction: column; }
     .side-col { width: 100%; flex-direction: row; }
     .i-tracker { flex: 1; }
+    .i-tracker-note { min-height: 0; }
     .console { flex: 2; }
   }
 </style>
@@ -225,7 +240,7 @@
 <h1>Stepping Through a For Loop</h1>
 
 <div class="directions" role="note">
-  <strong>How this works:</strong> Press Next to watch this loop run one step at a time, the same way it's traced in Lesson 7. Watch how i changes and how the console fills in.
+  <strong>How this works:</strong> Press Next to watch this loop run one step at a time, the same way it's traced in Lesson 7. The box on the right shows the current value of the variable <code>i</code>. Watch how it changes each time the loop runs, and how the console fills in.
 </div>
 
 <div class="step-label" id="step-label"></div>
@@ -233,14 +248,15 @@
 <div class="layout">
   <div class="code-col">
     <div class="code-block" role="img" aria-label="for i in range 5, colon, indented print of f string Day, open brace i close brace">
-      <div class="code-line" id="line-for">for i in range(5):</div>
-      <div class="code-line" id="line-print">&nbsp;&nbsp;print(f"Day {i}")</div>
+      <div class="code-line" id="line-for">for <span class="i-token">i</span> in range(5):</div>
+      <div class="code-line" id="line-print">&nbsp;&nbsp;print(f"Day {<span class="i-token">i</span>}")</div>
     </div>
   </div>
   <div class="side-col">
-    <div class="i-tracker">
-      <div class="i-tracker-label">i</div>
-      <div class="i-tracker-value" id="i-value">not set</div>
+    <div class="i-tracker" id="i-tracker" role="group" aria-label="The variable i">
+      <div class="i-tracker-label">The variable i</div>
+      <div class="i-tracker-value empty" id="i-value">i = ?</div>
+      <div class="i-tracker-note" id="i-note">Not set yet</div>
     </div>
   </div>
 </div>
@@ -266,18 +282,22 @@ for (let i = 0; i < 5; i++) {
   STEPS.push({
     line: 'line-for',
     iValue: i,
-    status: `Python checks range(5) for a next value. It gives <strong>i = ${i}</strong>.`
+    status: `Python checks range(5) for a next value. It gives <strong>i = ${i}</strong>.`,
+    note: 'New value from range(5)',
+    fresh: true
   });
   STEPS.push({
     line: 'line-print',
     iValue: i,
     status: `The indented line runs with <strong>i = ${i}</strong>, printing <strong>"Day ${i}"</strong> to the console.`,
+    note: 'The print line uses this value',
     output: `Day ${i}`
   });
 }
 STEPS.push({
   line: 'line-for',
-  iValue: null,
+  iValue: 4,
+  note: 'No new value, so the loop ends',
   status: `Python checks range(5) again. There's no value left to give, so the loop ends.`
 });
 
@@ -287,6 +307,8 @@ let printedLines = [];
 const liveRegion = document.getElementById('aria-live');
 const stepLabel = document.getElementById('step-label');
 const iValueEl = document.getElementById('i-value');
+const iNoteEl = document.getElementById('i-note');
+const trackerEl = document.getElementById('i-tracker');
 const consoleBox = document.getElementById('console-box');
 const statusLine = document.getElementById('status-line');
 const btnPrev = document.getElementById('btn-prev');
@@ -305,8 +327,10 @@ function render() {
 
   if (current === -1) {
     stepLabel.textContent = 'Press Next to begin';
-    iValueEl.textContent = 'not set';
+    iValueEl.textContent = 'i = ?';
     iValueEl.classList.add('empty');
+    iNoteEl.textContent = 'Not set yet';
+    trackerEl.classList.remove('fresh');
     consoleBox.innerHTML = '<span class="empty-note">not run yet</span>';
     statusLine.innerHTML = 'This loop will run 5 times, once for each value range(5) produces: 0, 1, 2, 3, 4.';
     btnPrev.disabled = true;
@@ -320,13 +344,10 @@ function render() {
 
   stepLabel.textContent = `Step ${current + 1} of ${STEPS.length}`;
 
-  if (step.iValue === null) {
-    iValueEl.textContent = 'exhausted';
-    iValueEl.classList.add('empty');
-  } else {
-    iValueEl.textContent = step.iValue;
-    iValueEl.classList.remove('empty');
-  }
+  iValueEl.textContent = 'i = ' + step.iValue;
+  iValueEl.classList.remove('empty');
+  iNoteEl.textContent = step.note;
+  trackerEl.classList.toggle('fresh', !!step.fresh);
 
   consoleBox.innerHTML = printedLines.length
     ? printedLines.join('<br>')
