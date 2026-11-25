@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Following the Data</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Geist', system-ui, sans-serif; font-size: 16px; background: #ffffff; color: #1a1a1a; padding: 1.25rem 1.5rem 2rem; line-height: 1.5; max-width: 680px; margin: 0 auto; }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: #1F1976; margin-bottom: 10px; }
+  h2 { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: #1F1976; margin-bottom: 8px; }
+  code, .mono { font-family: Consolas, 'Courier New', monospace; }
+  .directions { background: #D5EFFF; border-radius: 10px; padding: 13px 16px; margin-bottom: 1.1rem; font-size: 16px; color: #06338D; line-height: 1.6; }
+
+  .code-wrap { background: #1F1976; border-radius: 12px; padding: 12px 0; margin-bottom: 1rem; overflow-x: auto; }
+  .code { font-family: Consolas, 'Courier New', monospace; font-size: 16px; color: #E4E2F8; }
+  .line { display: flex; align-items: flex-start; line-height: 2; min-height: 32px; padding: 0 16px 0 12px; border-left: 4px solid transparent; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .line > span:last-child { flex: 1 1 auto; min-width: 0; }
+  .line .ln { display: inline-block; width: 28px; color: #ACA8EA; flex-shrink: 0; }
+  .line.active { background: #4C42CF; border-left-color: #34BD43; color: #ffffff; }
+  .line.active .ln { color: #ffffff; }
+  .line.errline { background: #FFE3CE; border-left-color: #F46800; color: #611D00; }
+  .line.errline .ln { color: #611D00; }
+  .tok { font: inherit; color: inherit; background: none; border: none; border-bottom: 3px solid #34BD43; padding: 0; margin: 0; cursor: pointer; line-height: 1.5; white-space: pre-wrap; text-align: left; overflow-wrap: anywhere; }
+  .tok:hover { background: rgba(172,168,234,0.25); }
+  .tok:focus-visible { outline: 3px solid #ffffff; outline-offset: 2px; }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+  .tab { font-family: inherit; font-size: 16px; font-weight: 600; color: #4C42CF; background: #ffffff; border: 2px solid #ACA8EA; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+  .tab[aria-current="step"] { background: #4C42CF; color: #ffffff; border-color: #4C42CF; }
+  .tab:focus-visible, .btn:focus-visible, .opt:focus-visible { outline: 3px solid #4C42CF; outline-offset: 2px; }
+
+  .panel { background: #F7F7FB; border: 2px solid #E4E2F8; border-radius: 12px; padding: 16px 18px; margin-bottom: 1rem; }
+  .step-label { font-size: 16px; font-weight: 700; color: #4C42CF; margin-bottom: 4px; }
+  .panel p { font-size: 16px; line-height: 1.8; color: #222222; margin-bottom: 10px; }
+  .panel code, .result code, .tip code { font-size: 16px; background: #E4E2F8; color: #1F1976; border-radius: 4px; padding: 0 5px; }
+  .tip { background: #E4E2F8; border-radius: 10px; padding: 12px 16px; font-size: 16px; line-height: 1.8; color: #222222; margin-top: 6px; }
+  .tip code { background: #ffffff; }
+  .opts { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 12px; }
+  .opt { font-family: inherit; font-size: 16px; font-weight: 600; color: #611D00; background: #ffffff; border: 2px solid #FFA868; border-radius: 10px; padding: 8px 12px; cursor: pointer; text-align: left; line-height: 1.4; }
+  .opt[aria-pressed="true"] { background: #FFE3CE; border-color: #F46800; border-width: 3px; padding: 7px 11px; }
+  .result { border-radius: 10px; padding: 12px 14px; font-size: 16px; line-height: 1.8; margin-bottom: 10px; }
+  .result.warn { background: #FFE3CE; border: 2px solid #FFA868; color: #611D00; }
+  .result.warn code { background: rgba(255,255,255,0.65); color: inherit; }
+  .errbox { font-family: Consolas, 'Courier New', monospace; font-size: 16px; line-height: 1.6; background: #ffffff; border-radius: 8px; padding: 8px 10px; margin: 6px 0; overflow-wrap: anywhere; color: #611D00; }
+
+  .names-title { font-size: 16px; font-weight: 700; color: #1F1976; margin-bottom: 6px; }
+  .names { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+  .nm { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; background: #ffffff; border: 2px solid #E4E2F8; border-radius: 10px; padding: 8px 12px; }
+  .nm.new { border-color: #34BD43; border-width: 3px; padding: 7px 11px; }
+  .nm .n { font-family: Consolas, 'Courier New', monospace; font-weight: 700; color: #1F1976; font-size: 16px; }
+  .badge { font-size: 16px; font-weight: 700; padding: 0 8px; border-radius: 6px; line-height: 1.5; }
+  .b-fn { background: #E4E2F8; color: #1F1976; border: 2px solid #4C42CF; }
+  .b-model { background: #1F1976; color: #ffffff; border: 2px solid #1F1976; }
+  .b-data { background: #CCF1D0; color: #003F25; border: 2px solid #34BD43; }
+  .b-num { background: #D5EFFF; color: #06338D; border: 2px solid #0099F3; }
+  .nm .d { font-size: 16px; line-height: 1.6; color: #222222; flex: 1 1 220px; min-width: 0; }
+  .empty-names { font-size: 16px; color: #555555; }
+
+  .nav { display: flex; justify-content: space-between; gap: 10px; }
+  .btn { font-family: inherit; font-size: 16px; font-weight: 700; color: #ffffff; background: #4C42CF; border: 2px solid #4C42CF; border-radius: 8px; padding: 10px 18px; cursor: pointer; }
+  .btn.sec { background: #ffffff; color: #4C42CF; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .sr-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+  @media (max-width: 480px) { body { padding: 1rem 1rem 1.5rem; } .btn { padding: 10px 14px; } }
+</style>
+</head>
+<body>
+
+<div id="aria-live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
+
+<h1>Following the Data</h1>
+
+<div class="directions" role="note">
+  <strong>How this works:</strong> Click an underlined part of the code, pick a step, or use the Next button to run the program one line at a time. The list under the explanation grows as each name is created. This example predicts whether a lemonade stand sells out, not your students' lab, but the code has the same shape.
+</div>
+
+<div class="code-wrap"><div class="code" id="code" role="group" aria-label="Example program, 7 lines"></div></div>
+
+<div class="tabs" id="tabs" role="group" aria-label="Walkthrough steps"></div>
+
+<div class="panel" id="panel"></div>
+
+<div class="names-title">Names in the program so far</div>
+<div class="names" id="names"></div>
+
+<div class="nav">
+  <button class="btn sec" id="prev" type="button">&larr; Back</button>
+  <button class="btn" id="next" type="button">Next &rarr;</button>
+</div>
+
+<script>
+var STEPS = [
+  { tab: '1 Import',    title: 'The import line',      lines: [0] },
+  { tab: '2 neighbors', title: 'A number to choose',   lines: [2] },
+  { tab: '3 Train',     title: 'Training the model',   lines: [3] },
+  { tab: '4 today',     title: 'Describing today',     lines: [5] },
+  { tab: '5 Visualize', title: 'Drawing the chart',    lines: [6] },
+  { tab: '6 Mistakes',  title: 'Two mistakes to try',  lines: [] }
+];
+var NAMES = [
+  { step: 1, name: 'train_model',     type: 'function',   cls: 'b-fn',    desc: 'Builds a model from data. A tool that comes with helpers.' },
+  { step: 1, name: 'training_data',   type: 'data',       cls: 'b-data',  desc: 'The past days the model learns from. It comes with helpers too.' },
+  { step: 1, name: 'visualize_model', type: 'function',   cls: 'b-fn',    desc: 'Draws the chart and shows the prediction. Another tool from helpers.' },
+  { step: 2, name: 'neighbors',       type: 'number',     cls: 'b-num',   desc: 'How many of the closest past days get a say. Here, 1.' },
+  { step: 3, name: 'predict_sellout', type: 'model',      cls: 'b-model', desc: 'The trained model that train_model built. It is not a label like "Sells out".' },
+  { step: 4, name: 'today',           type: 'dictionary', cls: 'b-data',  desc: 'Today\'s features: a name and a number for each one.' }
+];
+var cur = 0, mistake = null;
+
+var live = document.getElementById('aria-live');
+function announce(m) { live.textContent = ''; setTimeout(function () { live.textContent = m; }, 40); }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function codeHtml() {
+  var imp = mistake === 'import' ? 'from helpers import train_model, visualize_model' : 'from helpers import train_model, training_data, visualize_model';
+  var dict = mistake === 'comma' ? 'today = {"temperature": 85 "foot_traffic": 40}' : 'today = {"temperature": 85, "foot_traffic": 40}';
+  var defs = [
+    { html: '<button class="tok" data-step="1" aria-label="Step 1: the import line">' + esc(imp) + '</button>' },
+    { html: '' },
+    { html: '<button class="tok" data-step="2" aria-label="Step 2: neighbors">neighbors = 1</button>' },
+    { html: '<button class="tok" data-step="3" aria-label="Step 3: training the model">predict_sellout = train_model(training_data, neighbors)</button>' },
+    { html: '' },
+    { html: '<button class="tok" data-step="4" aria-label="Step 4: today">' + esc(dict) + '</button>' },
+    { html: '<button class="tok" data-step="5" aria-label="Step 5: drawing the chart">visualize_model(predict_sellout, today)</button>' }
+  ];
+  var hi = STEPS[cur].lines.slice(), err = [];
+  if (cur === 5 && mistake === 'import') { hi = [0]; err = [3]; }
+  if (cur === 5 && mistake === 'comma') { hi = []; err = [5]; }
+  return defs.map(function (d, i) {
+    var cls = 'line' + (hi.indexOf(i) !== -1 ? ' active' : '') + (err.indexOf(i) !== -1 ? ' errline' : '');
+    return '<div class="' + cls + '"><span class="ln">' + (i + 1) + '</span><span>' + d.html + '</span></div>';
+  }).join('');
+}
+
+function body(i) {
+  if (i === 0) return '' +
+    '<p>This line brings in three names from <code>helpers</code>, a file the course wrote. Two are tools: <code>train_model</code> builds the model and <code>visualize_model</code> draws the chart. The third, <code>training_data</code>, is not a tool. It is the information the model learns from.</p>' +
+    '<p>It is the same pattern as <code>from helpers import visualize_model</code> in the regression lab, with more names separated by commas. Importing works the same way for data as for tools.</p>' +
+    '<div class="tip"><strong>&#128161; Teacher tip:</strong> students did not write <code>training_data</code>, so some will ask where it came from. It lives in <code>helpers</code>, right next to the tools.</div>';
+  if (i === 1) return '' +
+    '<p><code>neighbors</code> is just a number: how many past days get a say in the prediction.</p>' +
+    '<p>With <code>1</code>, the model borrows the label of the single closest past day. With <code>3</code>, it takes a vote among the three closest, like the 2-to-1 vote earlier in this lesson.</p>';
+  if (i === 2) return '' +
+    '<p><code>train_model(training_data, neighbors)</code> takes two inputs, the data and the number, and builds a model from them. The result is stored in <code>predict_sellout</code>.</p>' +
+    '<p>Look at the list below. <code>predict_sellout</code> is not a label like "Sells out" or "Leftovers." It is the trained model, ready to make predictions.</p>' +
+    '<div class="tip"><strong>&#128161; Teacher tip:</strong> this is the "train a model with the data" step from the Lesson 1 process: gather data, train a model, use it to predict. No prediction happens yet.</div>';
+  if (i === 3) return '' +
+    '<p><code>today</code> is a dictionary, like the ones earlier in this lesson. The keys name the features and the values hold today\'s numbers.</p>' +
+    '<div class="tip"><strong>&#128161; Teacher tip:</strong> in the lab, students edit the values and leave the keys alone. Keep the key names exactly as written.</div>';
+  if (i === 4) return '' +
+    '<p><code>visualize_model(predict_sellout, today)</code> gives the helper two things: the trained model and today\'s day. It draws the chart of past days with Today on it, and shows the prediction.</p>' +
+    '<p>Change a value in <code>today</code>, run again, and Today moves on the chart. That can change which past days are its nearest neighbors.</p>';
+  var res = '';
+  if (mistake === 'import') res = '<div class="result warn"><strong>The error shows up on line 4, but the mistake is on line 1.</strong> <code>training_data</code> was left out of the import, so line 4 has no idea what it is.<div class="errbox">NameError: name \'training_data\' is not defined</div>Fix: add <code>training_data</code> back to the import line. When an error names a missing word, check the import line first.</div>';
+  if (mistake === 'comma') res = '<div class="result warn"><strong>The program does not run.</strong> Dictionary entries need a comma between them, and there is none between <code>85</code> and <code>"foot_traffic"</code>.<div class="errbox">SyntaxError</div>Fix: add the comma. Python usually reports a SyntaxError on or just after the line with the problem, so look at the end of the line before it too.</div>';
+  return '' +
+    '<p>Pick a mistake to see what Python reports and where to look.</p>' +
+    '<div class="opts">' +
+      '<button class="opt" type="button" data-mistake="import" aria-pressed="' + (mistake === 'import') + '">Forget training_data in the import</button>' +
+      '<button class="opt" type="button" data-mistake="comma" aria-pressed="' + (mistake === 'comma') + '">Forget the comma in today</button>' +
+    '</div>' + res;
+}
+
+function render() {
+  document.getElementById('code').innerHTML = codeHtml();
+  document.getElementById('tabs').innerHTML = STEPS.map(function (s, i) {
+    return '<button class="tab" type="button" data-tab="' + i + '"' + (i === cur ? ' aria-current="step"' : '') + '>' + s.tab + '</button>';
+  }).join('');
+  document.getElementById('panel').innerHTML = '<div class="step-label">Step ' + (cur + 1) + ' of ' + STEPS.length + '</div><h2>' + STEPS[cur].title + '</h2>' + body(cur);
+  var rows = NAMES.filter(function (n) { return n.step <= cur + 1; });
+  document.getElementById('names').innerHTML = rows.map(function (n) {
+    return '<div class="nm' + (n.step === cur + 1 ? ' new' : '') + '"><span class="n">' + n.name + '</span><span class="badge ' + n.cls + '">' + n.type + '</span><span class="d">' + esc(n.desc) + '</span></div>';
+  }).join('');
+  document.getElementById('prev').disabled = cur === 0;
+  document.getElementById('next').disabled = cur === STEPS.length - 1;
+}
+
+function go(i, focusTab) {
+  cur = i; if (i !== 5) mistake = null; render();
+  announce('Step ' + (cur + 1) + ' of ' + STEPS.length + ': ' + STEPS[cur].title + '.');
+  if (focusTab) { var t = document.querySelector('.tab[data-tab="' + i + '"]'); if (t) t.focus(); }
+}
+
+document.addEventListener('click', function (e) {
+  var t = e.target.closest('button'); if (!t) return;
+  if (t.classList.contains('tok')) { go(parseInt(t.getAttribute('data-step'), 10) - 1); return; }
+  if (t.hasAttribute('data-tab')) { go(parseInt(t.getAttribute('data-tab'), 10), true); return; }
+  if (t.id === 'prev' && cur > 0) { go(cur - 1); return; }
+  if (t.id === 'next' && cur < STEPS.length - 1) { go(cur + 1); return; }
+  if (t.hasAttribute('data-mistake')) {
+    mistake = t.getAttribute('data-mistake'); render();
+    announce(mistake === 'import' ? 'Name error. training_data is not defined. The error appears on line 4 but the mistake is on line 1.' : 'Syntax error. A comma is missing in the today dictionary.');
+    var b = document.querySelector('[data-mistake="' + mistake + '"]'); if (b) b.focus(); return;
+  }
+});
+
+render();
+announce('Following the data. Step 1 of 6: the import line.');
+</script>
+</body>
+</html>
