@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Look Through a Finished Project</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Geist', system-ui, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.5; background: #FFFFFF; color: #222222; padding: 16px; }
+  .wrap { max-width: 800px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; color: #1F1976; margin: 0 0 6px 0; }
+  .intro { margin: 0 0 12px 0; }
+  .intro a { color: #4C42CF; font-weight: 700; }
+  a:focus-visible, .btn:focus-visible { outline: 3px solid #1F1976; outline-offset: 2px; }
+  .panel-title { font-size: 16px; font-weight: 700; color: #1F1976; margin: 0 0 6px 0; }
+  :root { --zoom: 1.15; }
+  .guide-wrap { position: relative; height: 560px; border: 1px solid #ACA8EA; border-radius: 8px; background: #F7F7FB; overflow: hidden; }
+  .guide-frame { position: absolute; top: 0; left: 0; width: calc(100% / var(--zoom)); height: calc(100% / var(--zoom)); transform: scale(var(--zoom)); transform-origin: top left; border: 0; }
+  .code { background: #1F1976; border-radius: 10px; padding: 12px 0; margin-bottom: 10px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 16px; line-height: 1.55; color: #E4E2F8; overflow-x: auto; }
+  .line { display: block; white-space: pre; padding: 0 14px; border-left: 4px solid transparent; min-height: 1.55em; }
+  .line.hl { background: rgba(172,168,234,0.3); border-left-color: #34BD43; color: #FFFFFF; }
+  .k { color: #ACA8EA; font-weight: 700; }
+  .s { color: #6FE07C; }
+  .c { color: #CBC8F2; font-style: italic; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .btn { font-family: inherit; font-size: 16px; font-weight: 700; border-radius: 8px; padding: 8px 18px; cursor: pointer; border: 2px solid #4C42CF; }
+  .btn-primary { background: #4C42CF; color: #FFFFFF; }
+  .btn-secondary { background: #FFFFFF; color: #4C42CF; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .out { background: #FFFFFF; border: 2px solid #1F1976; border-radius: 8px; padding: 10px 14px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 16px; min-height: 52px; white-space: pre-wrap; word-break: break-word; color: #1F1976; }
+  .out .placeholder { color: #5A5A6A; font-family: 'Geist', system-ui, sans-serif; }
+  .out .answer { color: #4C42CF; font-weight: 700; }
+  .out .result { color: #003F25; background: #CCF1D0; font-weight: 700; padding: 0 4px; border-radius: 4px; }
+  .askrow { display: none; margin-top: 8px; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .askrow.show { display: flex; }
+  .askrow .label { font-weight: 700; color: #1F1976; }
+  .check { margin-top: 10px; border-radius: 8px; padding: 10px 14px; background: #F7F7FB; border-left: 4px solid #4C42CF; }
+  .check.good { background: #CCF1D0; border-left-color: #34BD43; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Look Through a Finished Project</h1>
+  <p class="intro">Compare the finished <a id="guideLink" href="https://docs.google.com/document/d/1ZbIN8ip0GGDW1qXw9J1CooB2M9cUDiE5lgW5tAMnVX4/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Project Planning Guide</a> with the code that came from it.</p>
+
+  <div>
+    <div class="panel-title">Project Planning Guide (finished example)</div>
+    <div class="guide-wrap"><iframe class="guide-frame" id="guideFrame" src="https://docs.google.com/document/d/1ZbIN8ip0GGDW1qXw9J1CooB2M9cUDiE5lgW5tAMnVX4/preview" title="Finished Project Planning Guide for the conversational AI class recommender"></iframe></div>
+  </div>
+
+  <div style="margin-top: 20px;">
+    <div class="panel-title">The code, built from the Step 3 decision tree</div>
+    <div class="code" id="code" role="group" aria-label="Python code"></div>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" id="runBtn">&#9654; Run</button>
+    </div>
+    <div class="out" id="out" aria-label="Program output"><span class="placeholder">Press Run, then answer the questions the program asks.</span></div>
+    <div class="askrow" id="askrow" role="group" aria-labelledby="askLabel">
+      <span class="label" id="askLabel">Your answer:</span>
+      <button type="button" class="btn btn-secondary" id="yesBtn">Yes</button>
+      <button type="button" class="btn btn-secondary" id="noBtn">No</button>
+    </div>
+    <div class="check" id="check">Paths tried: 0 of 8. Each ending in the Step 3 tree is one path.</div>
+  </div>
+  <div id="live" class="sr-only" aria-live="polite"></div>
+</div>
+<script>
+(function(){
+  // The Step 3 decision tree from the Project Planning Guide.
+  function L(out){ return {out: out}; }
+  var TREE = {
+    v:'likes_writing', q:'Do you like to write?',
+    note:'Question 1: separates writing classes from everything else',
+    yes:{ v:'is_visual', q:'Are you a visual person?',
+      note:'Writers: more visual, or more about words?',
+      yes:{ v:'likes_online', q:'Are you interested in writing online?', yes:L('Digital Media'), no:L('Yearbook') },
+      no:{ v:'likes_fiction', q:'Do you like writing fiction?', yes:L('Creative Writing'), no:L('Journalism') } },
+    no:{ v:'likes_building', q:'Do you like building things with your hands?',
+      note:'Not writers: building or something else?',
+      yes:{ v:'likes_computers', q:'Are you interested in computers?', yes:L('Robotics'), no:L('Woodworking') },
+      no:{ v:'likes_arts', q:'Are you interested in the arts?', yes:L('Theater'), no:L('Personal Finance') } }
+  };
+
+  var lines = []; // {html, id}
+  function esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function sp(n){ return new Array(n*2+1).join(' '); }
+  function add(html){ lines.push(html); return lines.length - 1; }
+  function gen(node, ind){
+    if (node.out) { node.printLine = add(sp(ind) + '<span class="k">print</span>(<span class="s">"Try a ' + esc(node.out) + ' class!"</span>)'); return; }
+    if (node.note) add(sp(ind) + '<span class="c"># ' + esc(node.note) + '</span>');
+    node.askLine = add(sp(ind) + node.v + ' = ask(<span class="s">"' + esc(node.q) + '"</span>)');
+    node.ifLine = add(sp(ind) + '<span class="k">if</span> ' + node.v + ':');
+    gen(node.yes, ind + 1);
+    node.elseLine = add(sp(ind) + '<span class="k">else</span>:');
+    gen(node.no, ind + 1);
+  }
+  add('<span class="c"># Conversational AI: recommends a class based on a student\'s answers</span>');
+  add('');
+  gen(TREE, 0);
+
+  var codeEl = document.getElementById('code');
+  codeEl.innerHTML = lines.map(function(h, i){ return '<span class="line" id="ln' + i + '">' + (h || ' ') + '</span>'; }).join('');
+
+  var out = document.getElementById('out'), askrow = document.getElementById('askrow');
+  var runBtn = document.getElementById('runBtn'), yesBtn = document.getElementById('yesBtn'), noBtn = document.getElementById('noBtn');
+  var check = document.getElementById('check'), live = document.getElementById('live');
+  var node = null, tried = {}, count = 0;
+
+  function say(m){ live.textContent = ''; setTimeout(function(){ live.textContent = m; }, 40); }
+  function clearHl(){ for (var i = 0; i < lines.length; i++) document.getElementById('ln' + i).classList.remove('hl'); }
+  function hl(){ for (var i = 0; i < arguments.length; i++) if (arguments[i] != null) document.getElementById('ln' + arguments[i]).classList.add('hl'); }
+  function updateCheck(msg){
+    check.className = 'check' + (count === 8 ? ' good' : '');
+    check.textContent = (msg ? msg + ' ' : '') + 'Paths tried: ' + count + ' of 8.' + (count === 8 ? ' You have followed every ending in the tree.' : ' Run it again and answer differently.');
+  }
+  function line(html){ out.insertAdjacentHTML('beforeend', html + '\n'); }
+
+  function showQuestion(){
+    clearHl(); hl(node.askLine);
+    askrow.classList.add('show');
+    out.insertAdjacentHTML('beforeend', '<span class="pending">' + esc(node.q) + ' </span>');
+    say('The program asks: ' + node.q + ' Answer Yes or No.');
+    yesBtn.focus();
+  }
+
+  function start(){
+    out.innerHTML = '';
+    node = TREE; runBtn.disabled = true; runBtn.textContent = '▶ Running';
+    showQuestion();
+  }
+
+  function answer(yes){
+    var pend = out.querySelector('.pending'); if (pend) pend.remove();
+    line(esc(node.q) + ' <span class="answer">' + (yes ? 'Yes' : 'No') + '</span>');
+    var cur = node, next = yes ? cur.yes : cur.no;
+    clearHl();
+    if (yes) hl(cur.ifLine); else hl(cur.ifLine, cur.elseLine);
+    if (next.out) {
+      hl(next.printLine);
+      askrow.classList.remove('show');
+      line('<span class="result">Try a ' + esc(next.out) + ' class!</span>');
+      if (!tried[next.out]) { tried[next.out] = true; count++; }
+      runBtn.disabled = false; runBtn.textContent = '▶ Run again'; runBtn.focus();
+      updateCheck('This run ended at ' + next.out + '.');
+      say('The program prints: Try a ' + next.out + ' class! Paths tried ' + count + ' of 8.');
+      node = null;
+    } else {
+      node = next;
+      hl(node.askLine);
+      out.insertAdjacentHTML('beforeend', '<span class="pending">' + esc(node.q) + ' </span>');
+      say('The program asks: ' + node.q + ' Answer Yes or No.');
+    }
+  }
+
+  runBtn.addEventListener('click', start);
+  yesBtn.addEventListener('click', function(){ if (node) answer(true); });
+  noBtn.addEventListener('click', function(){ if (node) answer(false); });
+})();
+</script>
+</body>
+</html>
