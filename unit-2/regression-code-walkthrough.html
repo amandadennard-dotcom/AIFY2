@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Walking Through the Lab Code</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Geist', system-ui, sans-serif; font-size: 16px; background: #ffffff; color: #1a1a1a; padding: 1.25rem 1.5rem 2rem; line-height: 1.5; max-width: 680px; margin: 0 auto; }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: #1F1976; margin-bottom: 10px; }
+  h2 { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: #1F1976; margin-bottom: 8px; }
+  code, .mono { font-family: Consolas, 'Courier New', monospace; }
+  .directions { background: #D5EFFF; border-radius: 10px; padding: 13px 16px; margin-bottom: 1.1rem; font-size: 16px; color: #06338D; line-height: 1.6; }
+
+  .code-wrap { background: #1F1976; border-radius: 12px; padding: 12px 0; margin-bottom: 1rem; overflow-x: auto; }
+  .code { min-width: max-content; font-family: Consolas, 'Courier New', monospace; font-size: 16px; color: #E4E2F8; }
+  .line { display: flex; align-items: baseline; line-height: 2; min-height: 32px; padding: 0 16px 0 12px; border-left: 4px solid transparent; white-space: pre; }
+  .line .ln { display: inline-block; width: 28px; align-self: baseline; color: #ACA8EA; flex-shrink: 0; }
+  .line.active { background: #4C42CF; border-left-color: #34BD43; color: #ffffff; }
+  .line.active .ln { color: #ffffff; }
+  .tok { font: inherit; color: inherit; background: none; border: none; border-bottom: 3px solid #34BD43; padding: 0; margin: 0; cursor: pointer; line-height: 1.5; white-space: pre; }
+  .tok:hover { background: rgba(172,168,234,0.25); }
+  .tok:focus-visible { outline: 3px solid #ffffff; outline-offset: 2px; }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+  .tab { font-family: inherit; font-size: 16px; font-weight: 600; color: #4C42CF; background: #ffffff; border: 2px solid #ACA8EA; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+  .tab[aria-current="step"] { background: #4C42CF; color: #ffffff; border-color: #4C42CF; }
+  .tab:focus-visible, .btn:focus-visible, .opt:focus-visible { outline: 3px solid #4C42CF; outline-offset: 2px; }
+
+  .panel { background: #F7F7FB; border: 2px solid #E4E2F8; border-radius: 12px; padding: 16px 18px; margin-bottom: 1rem; }
+  .step-label { font-size: 16px; font-weight: 700; color: #4C42CF; margin-bottom: 4px; }
+  .panel p, .panel .txt { font-size: 16px; line-height: 1.6; color: #222222; margin-bottom: 10px; }
+  .panel code { font-size: 16px; background: #E4E2F8; color: #1F1976; border-radius: 4px; padding: 0 5px; }
+  .panel .txt, .panel p { line-height: 1.8; }
+
+  .compare { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 12px; }
+  .card { flex: 1 1 240px; min-width: 0; background: #ffffff; border: 2px solid #E4E2F8; border-radius: 10px; padding: 12px 14px; }
+  .card .head { font-family: Consolas, 'Courier New', monospace; font-size: 16px; font-weight: 700; color: #1F1976; margin-bottom: 6px; overflow-wrap: anywhere; line-height: 1.5; }
+  .card .body { font-size: 16px; line-height: 1.8; color: #222222; }
+
+  .tip { background: #E4E2F8; border-radius: 10px; padding: 12px 16px; font-size: 16px; line-height: 1.8; color: #222222; margin-top: 6px; }
+  .opts { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 12px; }
+  .opt { font-family: Consolas, 'Courier New', monospace; font-size: 16px; font-weight: 700; color: #1F1976; background: #ffffff; border: 2px solid #ACA8EA; border-radius: 10px; padding: 8px 12px; cursor: pointer; text-align: left; }
+  .opt[aria-pressed="true"] { background: #E4E2F8; border-color: #4C42CF; }
+  .result { border-radius: 10px; padding: 12px 14px; font-size: 16px; line-height: 1.8; margin-bottom: 10px; }
+  .result.ok { background: #CCF1D0; border: 2px solid #34BD43; color: #003F25; }
+  .result.warn { background: #FFE3CE; border: 2px solid #FFA868; color: #611D00; }
+  .result.info { background: #ffffff; border: 2px solid #E4E2F8; color: #222222; }
+  .result code { background: rgba(255,255,255,0.65); color: inherit; }
+  .errbox { font-family: Consolas, 'Courier New', monospace; font-size: 16px; line-height: 1.6; background: #ffffff; border-radius: 8px; padding: 8px 10px; margin: 6px 0; overflow-wrap: anywhere; color: #611D00; }
+
+  .chip { display: inline-block; font-weight: 700; padding: 0 8px; border-radius: 6px; line-height: 1.5; }
+  .chip-m { background: #E4E2F8; color: #1F1976; border: 2px solid #4C42CF; }
+  .chip-b { background: #CCF1D0; color: #003F25; border: 2px solid #34BD43; }
+
+  .nav { display: flex; justify-content: space-between; gap: 10px; }
+  .btn { font-family: inherit; font-size: 16px; font-weight: 700; color: #ffffff; background: #4C42CF; border: 2px solid #4C42CF; border-radius: 8px; padding: 10px 18px; cursor: pointer; }
+  .btn.sec { background: #ffffff; color: #4C42CF; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .sr-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+  @media (max-width: 480px) { body { padding: 1rem 1rem 1.5rem; } .btn { padding: 10px 14px; } }
+</style>
+</head>
+<body>
+
+<div id="aria-live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
+
+<h1>Walking Through the Lab Code</h1>
+
+<div class="directions" role="note">
+  <strong>How this works:</strong> Click an underlined part of the code, pick a step below it, or use the Next button to see what each part does. This example uses quiz scores and study hours, not your students' lab, but the code has the same shape.
+</div>
+
+<div class="code-wrap">
+  <div class="code" role="group" aria-label="Example program, 12 lines">
+    <div class="line" data-steps="1"><span class="ln">1</span><button class="tok" data-step="1" aria-label="Step 1: the import line">from helpers import visualize_model</button></div>
+    <div class="line"><span class="ln">2</span></div>
+    <div class="line" data-steps="2"><span class="ln">3</span><span>def&nbsp;</span><button class="tok" data-step="2" aria-label="Step 2: the loss function">loss(actual, predicted)</button><span>:</span></div>
+    <div class="line" data-steps="2 3"><span class="ln">4</span><span>&nbsp;&nbsp;return&nbsp;</span><button class="tok" data-step="3" aria-label="Step 3: abs">abs</button><span>(actual - predicted)</span></div>
+    <div class="line"><span class="ln">5</span></div>
+    <div class="line" data-steps="4"><span class="ln">6</span><span>def predict_score_1(hours):</span></div>
+    <div class="line" data-steps="4"><span class="ln">7</span><span>&nbsp;&nbsp;return&nbsp;</span><button class="tok" data-step="4" aria-label="Step 4: the model formula">5 * hours + 50</button></div>
+    <div class="line"><span class="ln">8</span></div>
+    <div class="line" data-steps="4"><span class="ln">9</span><span>def predict_score_2(hours):</span></div>
+    <div class="line" data-steps="4"><span class="ln">10</span><span>&nbsp;&nbsp;return&nbsp;</span><button class="tok" data-step="4" aria-label="Step 4: the second model formula">8 * hours + 40</button></div>
+    <div class="line"><span class="ln">11</span></div>
+    <div class="line" data-steps="5"><span class="ln">12</span><button class="tok" data-step="5" aria-label="Step 5: passing functions in">visualize_model(<span id="model-name">predict_score_1</span>, loss)</button></div>
+  </div>
+</div>
+
+<div class="tabs" id="tabs" role="group" aria-label="Walkthrough steps"></div>
+
+<div class="panel" id="panel"></div>
+
+<div class="nav">
+  <button class="btn sec" id="prev" type="button">&larr; Back</button>
+  <button class="btn" id="next" type="button">Next &rarr;</button>
+</div>
+
+<script>
+var STEPS = [
+  { tab: '1 Import', title: 'The import line' },
+  { tab: '2 Loss', title: 'The loss function' },
+  { tab: '3 abs', title: 'The abs function' },
+  { tab: '4 Models', title: 'The model functions' },
+  { tab: '5 Pass in', title: 'Passing functions in' }
+];
+var cur = 0;
+var absPick = null;   // 'a' or 'b'
+var parens = false;
+var model = 1;
+
+var live = document.getElementById('aria-live');
+function announce(msg) { live.textContent = ''; setTimeout(function () { live.textContent = msg; }, 40); }
+
+function body(i) {
+  if (i === 0) {
+    return '' +
+    '<p>This line brings one tool into your program: a function named <code>visualize_model</code>, stored in a file called <code>helpers</code>. The course wrote <code>helpers</code> for your students, so nobody needs to open it. It draws the chart of dots and the line.</p>' +
+    '<div class="compare">' +
+      '<div class="card"><div class="head">import random</div><div class="body">Loads the whole module. You call its tools with the module name first: <code>random.randint(1, 10)</code>.</div></div>' +
+      '<div class="card"><div class="head">from helpers import visualize_model</div><div class="body">Loads one tool. You call it by its own name, with no prefix: <code>visualize_model(...)</code>.</div></div>' +
+    '</div>' +
+    '<div class="tip"><strong>&#128161; Teacher tip:</strong> if a student deletes this line, Python reports <code>NameError: name \'visualize_model\' is not defined</code>. If they type <code>helper</code> instead of <code>helpers</code>, they get a <code>ModuleNotFoundError</code>. Both mean the import line needs another look.</div>';
+  }
+  if (i === 1) {
+    return '' +
+    '<p><code>loss</code> takes two inputs and gives back one number. <code>actual</code> is what really happened. <code>predicted</code> is what the model guessed. The number it returns is how far off the guess was.</p>' +
+    '<p>This is the <code>def</code> and <code>return</code> pattern from Unit 1, Lesson 5. In the lab, your students complete the <code>return</code> line themselves, and they can prompt AI for help if they need it.</p>' +
+    '<div class="tip"><strong>&#128161; Teacher tip:</strong> students sometimes expect to call <code>loss</code> themselves. In this lab they hand it to <code>visualize_model</code>, which uses it to measure how far off each dot is. Step 5 shows how.</div>';
+  }
+  if (i === 2) {
+    var res = '';
+    if (absPick === 'a') res = '<div class="result ok"><strong>Actual 7, predicted 10.</strong> <code>7 - 10</code> is <code>-3</code>. <code>abs(-3)</code> gives <code>3</code>.</div>';
+    if (absPick === 'b') res = '<div class="result ok"><strong>Actual 10, predicted 7.</strong> <code>10 - 7</code> is <code>3</code>. <code>abs(3)</code> gives <code>3</code>.</div>';
+    var follow = absPick ? '<p>Both guesses miss by 3, so both get a loss of 3. That is absolute error: the distance between a prediction and an actual value, never negative.</p><div class="tip"><strong>&#128161; Teacher tip:</strong> without <code>abs</code>, a guess that is too high and a guess that is too low would score <code>-3</code> and <code>3</code>, and they would cancel when the losses are added up. A model could look perfect while missing every dot. Students may also think a negative loss means a better model. It does not.</div>' : '';
+    return '' +
+    '<p><code>abs</code> is built into Python. It returns a number\'s distance from zero, so a minus sign disappears. Try both orders of subtracting:</p>' +
+    '<div class="opts">' +
+      '<button class="opt" type="button" data-abs="a" aria-pressed="' + (absPick === 'a') + '">actual = 7, predicted = 10</button>' +
+      '<button class="opt" type="button" data-abs="b" aria-pressed="' + (absPick === 'b') + '">actual = 10, predicted = 7</button>' +
+    '</div>' + res + follow;
+  }
+  if (i === 3) {
+    return '' +
+    '<p>Each model is a function. It takes an input, <code>hours</code>, and returns a predicted quiz score.</p>' +
+    '<div class="result info"><span class="mono" style="font-weight:700; font-size:18px;">score = <span class="chip chip-m">5</span> &times; hours + <span class="chip chip-b">50</span></span></div>' +
+    '<p><span class="chip chip-m">5</span> is the slope: each extra hour adds 5 points. <span class="chip chip-b">50</span> is the y-intercept: the predicted score at 0 hours.</p>' +
+    '<p>This is the same <code>y = mx + b</code> from Lesson 5, with the slope and y-intercept typed straight into the formula. Model 2 uses <span class="chip chip-m">8</span> and <span class="chip chip-b">40</span>: a steeper line that starts lower. Same data, two different lines.</p>';
+  }
+  var line = parens ? 'visualize_model(predict_score_' + model + '(), loss())' : 'visualize_model(predict_score_' + model + ', loss)';
+  var out;
+  if (parens) {
+    out = '<div class="result warn"><strong>Error.</strong> Parentheses mean "run this now." Python tries to run <code>predict_score_' + model + '</code> right away, with no hours to give it.<div class="errbox">TypeError: predict_score_' + model + '() missing 1 required positional argument: \'hours\'</div></div>';
+  } else {
+    out = '<div class="result ok"><strong>Works.</strong> You hand <code>visualize_model</code> the functions themselves, with no parentheses. It runs them for you, once for each dot on the chart.</div>';
+  }
+  return '' +
+  '<p>Look closely at line 12. <code>predict_score_' + model + '</code> and <code>loss</code> have no parentheses after them. You are giving <code>visualize_model</code> the functions to use, not asking Python to run them yet. Compare:</p>' +
+  '<div class="opts">' +
+    '<button class="opt" type="button" data-paren="0" aria-pressed="' + (!parens) + '">Without parentheses</button>' +
+    '<button class="opt" type="button" data-paren="1" aria-pressed="' + parens + '">With parentheses</button>' +
+  '</div>' +
+  '<div class="result info"><span class="mono" style="font-weight:700;">' + line + '</span></div>' + out +
+  '<p>To compare models in the lab, your students change one word on this line and run it again. Try it here:</p>' +
+  '<div class="opts"><button class="opt" type="button" id="swap">Swap in model ' + (model === 1 ? '2' : '1') + '</button></div>' +
+  '<div class="tip"><strong>&#128161; Teacher tip:</strong> the parentheses mistake is the one to watch for. Students are used to writing <code>()</code> after every function name, so they add them here too. The error message names the model function, which is a good clue to point them to.</div>';
+}
+
+function render() {
+  var tabs = document.getElementById('tabs');
+  tabs.innerHTML = STEPS.map(function (s, i) {
+    return '<button class="tab" type="button" data-tab="' + i + '"' + (i === cur ? ' aria-current="step"' : '') + '>' + s.tab + '</button>';
+  }).join('');
+  document.getElementById('panel').innerHTML = '<div class="step-label">Step ' + (cur + 1) + ' of ' + STEPS.length + '</div><h2>' + STEPS[cur].title + '</h2>' + body(cur);
+  document.getElementById('prev').disabled = cur === 0;
+  document.getElementById('next').disabled = cur === STEPS.length - 1;
+  document.getElementById('model-name').textContent = 'predict_score_' + model;
+  var lines = document.querySelectorAll('.line[data-steps]');
+  for (var k = 0; k < lines.length; k++) {
+    var on = lines[k].getAttribute('data-steps').split(' ').indexOf(String(cur + 1)) !== -1;
+    lines[k].classList.toggle('active', on);
+  }
+}
+
+function go(i, focusTab) {
+  cur = i; render();
+  announce('Step ' + (cur + 1) + ' of ' + STEPS.length + ': ' + STEPS[cur].title + '.');
+  if (focusTab) { var t = document.querySelector('.tab[data-tab="' + i + '"]'); if (t) t.focus(); }
+}
+
+document.addEventListener('click', function (e) {
+  var t = e.target.closest('button'); if (!t) return;
+  if (t.classList.contains('tok')) { go(parseInt(t.getAttribute('data-step'), 10) - 1); return; }
+  if (t.hasAttribute('data-tab')) { go(parseInt(t.getAttribute('data-tab'), 10), true); return; }
+  if (t.id === 'prev' && cur > 0) { go(cur - 1); return; }
+  if (t.id === 'next' && cur < STEPS.length - 1) { go(cur + 1); return; }
+  if (t.hasAttribute('data-abs')) {
+    absPick = t.getAttribute('data-abs'); render();
+    announce(absPick === 'a' ? 'Actual 7, predicted 10. Seven minus ten is negative 3. abs gives 3.' : 'Actual 10, predicted 7. Ten minus seven is 3. abs gives 3.');
+    var b = document.querySelector('[data-abs="' + absPick + '"]'); if (b) b.focus(); return;
+  }
+  if (t.hasAttribute('data-paren')) {
+    parens = t.getAttribute('data-paren') === '1'; render();
+    announce(parens ? 'With parentheses. This causes a TypeError.' : 'Without parentheses. This works.');
+    var p = document.querySelector('[data-paren="' + (parens ? 1 : 0) + '"]'); if (p) p.focus(); return;
+  }
+  if (t.id === 'swap') {
+    model = model === 1 ? 2 : 1; render();
+    announce('Line 12 now passes in predict_score_' + model + '.');
+    var s = document.getElementById('swap'); if (s) s.focus(); return;
+  }
+});
+
+render();
+announce('Code walkthrough ready. Step 1 of 5: the import line.');
+</script>
+</body>
+</html>
