@@ -60,22 +60,24 @@
   }
   .readout {
     display: flex;
-    gap: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
     margin-bottom: 1rem;
   }
   .readout-box {
-    flex: 1;
+    flex: 1 1 100px;
+    min-width: 0;
     background: #F7F7FB;
     border-radius: 10px;
     padding: 14px;
     text-align: center;
   }
   .readout-label {
-    font-size: 12px;
+    font-size: 16px;
     font-weight: 700;
     color: #555;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.02em;
     margin-bottom: 6px;
   }
   .readout-value {
@@ -92,7 +94,7 @@
   }
   .btn {
     font-family: inherit;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     border-radius: 8px;
     padding: 10px 24px;
@@ -105,6 +107,15 @@
   .btn:hover:not(:disabled) { background: #4C42CF; color: #ffffff; }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .btn:focus-visible { outline: 3px solid #ACA8EA; outline-offset: 2px; }
+  .start-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin-bottom: 1rem; }
+  .start-label { font-size: 16px; font-weight: 700; color: #1F1976; margin-right: 4px; }
+  .chip {
+    font-family: inherit; font-size: 16px; font-weight: 700; border-radius: 8px;
+    padding: 6px 14px; border: 2px solid #ACA8EA; background: #ffffff; color: #1F1976; cursor: pointer;
+  }
+  .chip:hover { border-color: #4C42CF; }
+  .chip[aria-pressed="true"] { background: #4C42CF; border-color: #4C42CF; color: #ffffff; }
+  .chip:focus-visible { outline: 3px solid #1F1976; outline-offset: 2px; }
   .status-line {
     background: #F7F7FB;
     border-radius: 10px;
@@ -119,7 +130,7 @@
   .status-line strong { color: #1F1976; }
   .reset-wrap { text-align: right; }
   .reset-btn {
-    font-size: 13px;
+    font-size: 16px;
     color: #4C42CF;
     cursor: pointer;
     background: none;
@@ -149,7 +160,7 @@
 <h1>Hill Climbing: Finding the Comfortable Temperature</h1>
 
 <div class="directions" role="note">
-  <strong>How this works:</strong> The shape below <em>is</em> the comfort score, plotted across every temperature. Higher on the hill means more classmates (out of 30) would be comfortable there. Use Warmer or Cooler to move the dot along the hill, one step at a time, same logic as the algorithm you'll trace by hand.
+  <strong>How this works:</strong> The shape below <em>is</em> the comfort score, plotted across every temperature. Higher on the hill means more classmates (out of 30) would be comfortable there. Pick a starting temperature, then use Warmer or Cooler to move the dot along the hill, one step at a time, same logic as the algorithm you'll trace by hand.
 </div>
 
 <div class="hill-wrap">
@@ -157,9 +168,9 @@
     <polygon id="hill-fill" fill="#E4E2F8" points=""/>
     <polyline id="hill-outline" fill="none" stroke="#ACA8EA" stroke-width="2" points=""/>
   </svg>
-  <div class="hill-tick" style="position:absolute; left:0; bottom:4px; font-size:11px; color:#999;">50&deg;</div>
-  <div class="hill-tick" style="position:absolute; left:50%; bottom:4px; transform:translateX(-50%); font-size:11px; color:#4C42CF; font-weight:700;">70&deg; (peak)</div>
-  <div class="hill-tick" style="position:absolute; right:0; bottom:4px; font-size:11px; color:#999;">85&deg;</div>
+  <div class="hill-tick" style="position:absolute; left:0; bottom:4px; font-size:16px; color:#555555;">50&deg;</div>
+  <div class="hill-tick" style="position:absolute; left:50%; bottom:4px; transform:translateX(-50%); font-size:16px; color:#4C42CF; font-weight:700;">70&deg; (peak)</div>
+  <div class="hill-tick" style="position:absolute; right:0; bottom:4px; font-size:16px; color:#555555;">85&deg;</div>
   <div class="marker" id="marker"></div>
 </div>
 
@@ -176,6 +187,17 @@
     <div class="readout-label">Steps Taken</div>
     <div class="readout-value" id="steps-value">0</div>
   </div>
+</div>
+
+<div class="start-row" role="group" aria-labelledby="start-label">
+  <span class="start-label" id="start-label">Start from:</span>
+  <button class="chip" data-temp="50" aria-pressed="false">50&deg;</button>
+  <button class="chip" data-temp="55" aria-pressed="false">55&deg;</button>
+  <button class="chip" data-temp="60" aria-pressed="true">60&deg;</button>
+  <button class="chip" data-temp="65" aria-pressed="false">65&deg;</button>
+  <button class="chip" data-temp="75" aria-pressed="false">75&deg;</button>
+  <button class="chip" data-temp="80" aria-pressed="false">80&deg;</button>
+  <button class="chip" data-temp="85" aria-pressed="false">85&deg;</button>
 </div>
 
 <div class="controls">
@@ -198,6 +220,7 @@ function comfortScore(temp) {
   return 30 - Math.abs(temp - PEAK_TEMP);
 }
 
+let startTemp = 60;
 let temp = 60;
 let steps = 0;
 let atPeak = false;
@@ -289,21 +312,30 @@ function step(direction) {
 function showSummary() {
   document.getElementById('summary-area').innerHTML = `
     <div class="summary-box">
-      <strong>&#128161; You've reached a peak after ${steps} steps.</strong> Both neighboring temperatures score the same or worse, so hill climbing stops here. Try Reset and start from a different temperature, does it always take the same number of steps? Does it always end up at the same peak?
+      <strong>&#128161; You've reached a peak after ${steps} steps.</strong> Both neighboring temperatures score the same or worse, so hill climbing stops here. Pick a different starting temperature above and try again. Does it always take the same number of steps? Does it always end up at the same peak?
     </div>
   `;
   announce('Reached a peak after ' + steps + ' steps. Neither direction improves comfort further.');
 }
 
 function resetAll() {
-  temp = 60;
+  temp = startTemp;
   steps = 0;
   atPeak = false;
   document.getElementById('summary-area').innerHTML = '';
-  statusLine.textContent = 'Starting at 60\u00B0. Try a direction and see what happens.';
+  statusLine.textContent = 'Starting at ' + startTemp + '\u00B0. Try a direction and see what happens.';
   render();
-  announce('Reset to 60 degrees.');
+  announce('Reset to ' + startTemp + ' degrees.');
 }
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    startTemp = parseInt(chip.dataset.temp, 10);
+    document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
+    resetAll();
+    announce('Starting temperature set to ' + startTemp + ' degrees.');
+  });
+});
 
 drawHill();
 render();
