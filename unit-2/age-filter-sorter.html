@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filtering a List with Conditions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Geist', system-ui, sans-serif; font-size: 16px; background: #ffffff; color: #1a1a1a; padding: 1.25rem 1.5rem 2rem; line-height: 1.5; max-width: 680px; margin: 0 auto; }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: #1F1976; margin-bottom: 10px; }
+  code, .mono { font-family: Consolas, 'Courier New', monospace; }
+  .directions { background: #D5EFFF; border-radius: 10px; padding: 13px 16px; margin-bottom: 1.1rem; font-size: 16px; color: #06338D; line-height: 1.6; }
+  .label { font-size: 16px; font-weight: 700; color: #1F1976; margin-bottom: 6px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+  .opt { font-family: inherit; font-size: 16px; font-weight: 600; color: #4C42CF; background: #ffffff; border: 2px solid #ACA8EA; border-radius: 10px; padding: 8px 14px; cursor: pointer; text-align: left; line-height: 1.4; }
+  .opt[aria-pressed="true"] { background: #4C42CF; color: #ffffff; border-color: #4C42CF; }
+  .opt.bad { border-color: #FFA868; color: #611D00; }
+  .opt.bad[aria-pressed="true"] { background: #FFE3CE; color: #611D00; border-color: #F46800; border-width: 3px; padding: 7px 13px; }
+  .opt:focus-visible, .run:focus-visible { outline: 3px solid #1F1976; outline-offset: 2px; }
+
+  .code-wrap { background: #1F1976; border-radius: 12px; padding: 12px 0; margin-bottom: 1rem; overflow-x: auto; }
+  .code { min-width: max-content; font-family: Consolas, 'Courier New', monospace; font-size: 16px; color: #E4E2F8; }
+  .line { display: flex; align-items: baseline; line-height: 2; min-height: 32px; padding: 0 16px 0 12px; border-left: 4px solid transparent; white-space: pre; }
+  .line .ln { display: inline-block; width: 28px; color: #ACA8EA; flex-shrink: 0; }
+  .line.focus { background: #4C42CF; border-left-color: #34BD43; color: #ffffff; }
+  .line.focus .ln { color: #ffffff; }
+  .line.focus.badline { background: #FFE3CE; border-left-color: #F46800; color: #611D00; }
+  .line.focus.badline .ln { color: #611D00; }
+
+  .run { font-family: inherit; font-size: 16px; font-weight: 700; color: #ffffff; background: #4C42CF; border: 2px solid #4C42CF; border-radius: 8px; padding: 10px 22px; cursor: pointer; margin-bottom: 1rem; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+  .chip { font-family: Consolas, 'Courier New', monospace; font-size: 16px; font-weight: 700; min-width: 56px; text-align: center; padding: 6px 10px; border-radius: 8px; border: 2px solid #ACA8EA; background: #F7F7FB; color: #1F1976; line-height: 1.5; }
+  .chip.pass { background: #CCF1D0; border-color: #34BD43; color: #003F25; }
+  .chip.passbad { background: #FFE3CE; border-color: #FFA868; color: #611D00; }
+  .chip.skip { background: #ffffff; border: 2px dashed #ACA8EA; color: #555555; font-weight: 500; }
+
+  .console { background: #F7F7FB; border: 2px solid #E4E2F8; border-radius: 12px; padding: 12px 16px; margin-bottom: 1rem; }
+  .console .head { font-size: 16px; font-weight: 700; color: #4C42CF; margin-bottom: 4px; }
+  .console .out { font-family: Consolas, 'Courier New', monospace; font-size: 16px; line-height: 1.8; color: #222222; white-space: pre-wrap; min-height: 32px; }
+  .console .out.err { color: #611D00; }
+  .console .hint { font-family: inherit; color: #555555; }
+
+  .result { border-radius: 10px; padding: 12px 16px; font-size: 16px; line-height: 1.8; margin-bottom: 1rem; }
+  .result.ok { background: #CCF1D0; border: 2px solid #34BD43; color: #003F25; }
+  .result.warn { background: #FFE3CE; border: 2px solid #FFA868; color: #611D00; }
+  .result.info { background: #D5EFFF; border: 2px solid #6FCAFF; color: #06338D; }
+  .result code { background: rgba(255,255,255,0.65); color: inherit; border-radius: 4px; padding: 0 5px; font-size: 16px; }
+  .tip { background: #E4E2F8; border-radius: 10px; padding: 12px 16px; font-size: 16px; line-height: 1.8; color: #222222; }
+  .tip code { background: #ffffff; color: #1F1976; border-radius: 4px; padding: 0 5px; font-size: 16px; }
+  .sr-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+  @media (max-width: 480px) { body { padding: 1rem 1rem 1.5rem; } }
+</style>
+</head>
+<body>
+
+<div id="aria-live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
+
+<h1>Filtering a List with Conditions</h1>
+
+<div class="directions" role="note">
+  <strong>How this works:</strong> Pick a list, then pick a group. The highlighted line is the condition that decides which ages get printed. Press Run: ages that pass the condition light up, and the console shows what the program prints. The last row has common mistakes to try.
+</div>
+
+<div class="label" id="lbl-data">1. Pick a list</div>
+<div class="row" role="group" aria-labelledby="lbl-data" id="data-row"></div>
+
+<div class="label" id="lbl-group">2. Pick a group</div>
+<div class="row" role="group" aria-labelledby="lbl-group" id="group-row"></div>
+
+<div class="label" id="lbl-bad">Or try a common mistake</div>
+<div class="row" role="group" aria-labelledby="lbl-bad" id="bad-row"></div>
+
+<div class="code-wrap"><div class="code" id="code" role="group" aria-label="The program"></div></div>
+
+<button class="run" id="run" type="button">&#9654; Run program</button>
+
+<div class="label" id="lbl-chips">The ages list</div>
+<div class="chips" id="chips" role="list" aria-labelledby="lbl-chips"></div>
+
+<div class="console"><div class="head">Console</div><div class="out" id="out"></div></div>
+
+<div id="result"></div>
+
+<div class="tip"><strong>&#128161; Teacher tip:</strong> the lab data has no age of exactly 18 or 65, so a boundary mistake will not show up in the output. Ask students to test their condition by hand against 18 and 65. If a student gets an <code>IndentationError</code>, check that the <code>if</code> is indented under the <code>for</code> and the <code>print</code> is indented under the <code>if</code>.</div>
+
+<script>
+var DATA = {
+  A: { name: 'Museum visitors', ages: [9, 34, 71, 16, 45, 18, 65, 8, 52, 29] },
+  B: { name: 'Library card holders', ages: [34, 71, 45, 29, 52, 38, 65, 41, 23, 58] }
+};
+var MODES = {
+  children: { label: 'Children',  head: 'Children:', cond: 'age < 18',               test: function (a) { return a < 18; } },
+  adults:   { label: 'Adults',    head: 'Adults:',   cond: 'age >= 18 and age < 65', test: function (a) { return a >= 18 && a < 65; } },
+  seniors:  { label: 'Seniors',   head: 'Seniors:',  cond: 'age >= 65',              test: function (a) { return a >= 65; } },
+  m1: { label: 'Uses or instead of and',  head: 'Adults:', cond: 'age >= 18 or age < 65',  test: function (a) { return a >= 18 || a < 65; }, bad: true },
+  m2: { label: 'Leaves out the second age', head: 'Adults:', cond: 'age >= 18 and < 65', syntax: true, bad: true },
+  m3: { label: 'Uses <= 65',              head: 'Adults:', cond: 'age >= 18 and age <= 65', test: function (a) { return a >= 18 && a <= 65; }, bad: true }
+};
+var ds = 'A', mode = 'children', ran = false;
+
+var live = document.getElementById('aria-live');
+function announce(m) { live.textContent = ''; setTimeout(function () { live.textContent = m; }, 40); }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function matches() {
+  var m = MODES[mode];
+  if (m.syntax) return [];
+  return DATA[ds].ages.filter(m.test);
+}
+
+function renderButtons() {
+  document.getElementById('data-row').innerHTML = ['A', 'B'].map(function (k) {
+    return '<button class="opt" type="button" data-ds="' + k + '" aria-pressed="' + (ds === k) + '">' + DATA[k].name + '</button>';
+  }).join('');
+  document.getElementById('group-row').innerHTML = ['children', 'adults', 'seniors'].map(function (k) {
+    return '<button class="opt" type="button" data-mode="' + k + '" aria-pressed="' + (mode === k) + '">' + MODES[k].label + '</button>';
+  }).join('');
+  document.getElementById('bad-row').innerHTML = ['m1', 'm2', 'm3'].map(function (k) {
+    return '<button class="opt bad" type="button" data-mode="' + k + '" aria-pressed="' + (mode === k) + '">' + esc(MODES[k].label) + '</button>';
+  }).join('');
+}
+
+function renderCode() {
+  var a = DATA[ds].ages, m = MODES[mode];
+  var l1 = 'ages = [' + a.slice(0, 5).join(', ') + ',';
+  var l2 = '        ' + a.slice(5).join(', ') + ']';
+  var lines = [l1, l2, '', 'print("' + m.head + '")', 'for age in ages:', '  if ' + m.cond + ':', '    print(age)'];
+  document.getElementById('code').innerHTML = lines.map(function (t, i) {
+    var cls = 'line' + (i === 5 ? ' focus' + (m.bad ? ' badline' : '') : '');
+    return '<div class="' + cls + '"><span class="ln">' + (i + 1) + '</span><span>' + esc(t) + '</span></div>';
+  }).join('');
+}
+
+function renderChips() {
+  var m = MODES[mode], a = DATA[ds].ages;
+  document.getElementById('chips').innerHTML = a.map(function (v) {
+    var cls = 'chip', txt = String(v), label = 'Age ' + v;
+    if (ran && !m.syntax) {
+      if (m.test(v)) { cls += m.bad ? ' passbad' : ' pass'; txt = '✓ ' + v; label += ', printed'; }
+      else { cls += ' skip'; label += ', not printed'; }
+    }
+    return '<div class="' + cls + '" role="listitem" aria-label="' + label + '">' + txt + '</div>';
+  }).join('');
+}
+
+function renderOut() {
+  var m = MODES[mode], out = document.getElementById('out');
+  out.className = 'out';
+  if (!ran) { out.innerHTML = '<span class="hint">Press Run to see the output.</span>'; return; }
+  if (m.syntax) {
+    out.className = 'out err';
+    out.textContent = 'SyntaxError: invalid syntax\n(The program stops before anything runs.)';
+    return;
+  }
+  var ms = matches();
+  out.textContent = [m.head].concat(ms.map(String)).join('\n');
+}
+
+function renderResult() {
+  var box = document.getElementById('result'), m = MODES[mode], html = '';
+  if (ran) {
+    var ms = matches();
+    if (mode === 'children') {
+      if (ms.length === 0) html = '<div class="result info"><strong>&#128161; Nothing prints under the header.</strong> That is not a bug. No one in this list is under 18, so the loop has nothing to print. An empty result is a finding: this list has no children, so it does not represent every age group.</div>';
+      else html = '<div class="result ok"><strong>Prints ' + ms.length + ' ages.</strong> <code>age &lt; 18</code> is true for the ages that lit up. An age of exactly 18 would not qualify, because <code>&lt;</code> leaves out the number it compares to.</div>';
+    } else if (mode === 'adults') {
+      html = '<div class="result ok"><strong>Prints ' + ms.length + ' ages.</strong> <code>and</code> needs both conditions true at once: at least 18, and under 65. An age of exactly 18 qualifies, because <code>&gt;=</code> includes 18. An age of exactly 65 does not, because <code>&lt;</code> leaves it out.</div>';
+    } else if (mode === 'seniors') {
+      html = '<div class="result ok"><strong>Prints ' + ms.length + ' ages.</strong> <code>&gt;=</code> includes 65, so an age of exactly 65 counts as a senior.</div>';
+    } else if (mode === 'm1') {
+      html = '<div class="result warn"><strong>Wrong output: every age prints, including the ones that are not adults.</strong> With <code>or</code>, only one condition has to be true, and every number is either at least 18 or under 65. Fix: use <code>and</code> when both conditions must be true at the same time.</div>';
+    } else if (mode === 'm2') {
+      html = '<div class="result warn"><strong>The program does not run.</strong> <code>and</code> joins two complete conditions, so each one needs its own <code>age</code>. Fix: <code>age &gt;= 18 and age &lt; 65</code>. Students often write the broken version because it sounds right out loud: "at least 18 and less than 65."</div>';
+    } else if (mode === 'm3') {
+      html = '<div class="result warn"><strong>Wrong output: 65 prints as an adult.</strong> The age 65 also counts as a senior (<code>age &gt;= 65</code>), so it would show up in both lists. Fix: use <code>&lt;</code> at the top end so every age lands in exactly one group.</div>';
+    }
+  }
+  box.innerHTML = html;
+}
+
+function announceRun() {
+  var m = MODES[mode];
+  if (m.syntax) { announce('Run. Syntax error. The program does not run.'); return; }
+  var ms = matches();
+  announce('Run. ' + m.head.replace(':', '') + ': ' + (ms.length ? ms.length + ' ages printed: ' + ms.join(', ') + '.' : 'nothing printed.'));
+}
+
+function renderAll() { renderButtons(); renderCode(); renderChips(); renderOut(); renderResult(); }
+
+document.addEventListener('click', function (e) {
+  var t = e.target.closest('button'); if (!t) return;
+  if (t.hasAttribute('data-ds')) {
+    ds = t.getAttribute('data-ds'); ran = false; renderAll();
+    announce('List changed to ' + DATA[ds].name + '. Press Run.');
+    var b = document.querySelector('[data-ds="' + ds + '"]'); if (b) b.focus(); return;
+  }
+  if (t.hasAttribute('data-mode')) {
+    mode = t.getAttribute('data-mode'); ran = false; renderAll();
+    announce('Condition: ' + MODES[mode].cond + '. Press Run.');
+    var g = document.querySelector('[data-mode="' + mode + '"]'); if (g) g.focus(); return;
+  }
+  if (t.id === 'run') { ran = true; renderChips(); renderOut(); renderResult(); announceRun(); return; }
+});
+
+renderAll();
+announce('Filtering a list with conditions. Pick a list and a group, then press Run.');
+</script>
+</body>
+</html>
