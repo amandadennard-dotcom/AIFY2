@@ -12,10 +12,16 @@
   h1 { font-size: 22px; font-weight: 700; color: #1F1976; margin: 0 0 6px 0; }
   .intro { margin: 0 0 12px 0; }
   .intro a { color: #4C42CF; font-weight: 700; }
+  .guide-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+  .guide-head .panel-title { margin: 0; }
+  .zoomctl { display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1F1976; }
+  .zbtn { font-family: inherit; font-size: 16px; font-weight: 700; min-width: 40px; height: 36px; border-radius: 8px; border: 2px solid #4C42CF; background: #FFFFFF; color: #4C42CF; cursor: pointer; }
+  .zbtn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .zbtn:focus-visible { outline: 3px solid #1F1976; outline-offset: 2px; }
   a:focus-visible, .btn:focus-visible { outline: 3px solid #1F1976; outline-offset: 2px; }
   .panel-title { font-size: 16px; font-weight: 700; color: #1F1976; margin: 0 0 6px 0; }
-  :root { --zoom: 1.15; }
-  .guide-wrap { position: relative; height: 560px; border: 1px solid #ACA8EA; border-radius: 8px; background: #F7F7FB; overflow: hidden; }
+  :root { --zoom: 1.3; }
+  .guide-wrap { position: relative; height: 640px; border: 1px solid #ACA8EA; border-radius: 8px; background: #F7F7FB; overflow: hidden; }
   .guide-frame { position: absolute; top: 0; left: 0; width: calc(100% / var(--zoom)); height: calc(100% / var(--zoom)); transform: scale(var(--zoom)); transform-origin: top left; border: 0; }
   .code { background: #1F1976; border-radius: 10px; padding: 12px 0; margin-bottom: 10px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 16px; line-height: 1.55; color: #E4E2F8; overflow-x: auto; }
   .line { display: block; white-space: pre; padding: 0 14px; border-left: 4px solid transparent; min-height: 1.55em; }
@@ -46,7 +52,7 @@
   <p class="intro">Compare the finished <a id="guideLink" href="https://docs.google.com/document/d/1ZbIN8ip0GGDW1qXw9J1CooB2M9cUDiE5lgW5tAMnVX4/edit?usp=sharing" target="_blank" rel="noopener noreferrer">Project Planning Guide</a> with the code that came from it.</p>
 
   <div>
-    <div class="panel-title">Project Planning Guide (finished example)</div>
+    <div class="guide-head"><div class="panel-title">Project Planning Guide (finished example)</div><div class="zoomctl" role="group" aria-label="Guide zoom"><button type="button" class="zbtn" id="zOut" aria-label="Zoom out the guide">&minus;</button><span id="zVal" aria-live="polite">130%</span><button type="button" class="zbtn" id="zIn" aria-label="Zoom in the guide">+</button></div></div>
     <div class="guide-wrap"><iframe class="guide-frame" id="guideFrame" src="https://docs.google.com/document/d/1ZbIN8ip0GGDW1qXw9J1CooB2M9cUDiE5lgW5tAMnVX4/preview" title="Finished Project Planning Guide for the conversational AI class recommender"></iframe></div>
   </div>
 
@@ -157,6 +163,20 @@
   runBtn.addEventListener('click', start);
   yesBtn.addEventListener('click', function(){ if (node) answer(true); });
   noBtn.addEventListener('click', function(){ if (node) answer(false); });
+
+  // Guide zoom controls
+  (function(){
+    var z = 1.3, MIN = 1.0, MAX = 2.0;
+    var zIn = document.getElementById('zIn'), zOut = document.getElementById('zOut'), zVal = document.getElementById('zVal');
+    function apply(){
+      document.documentElement.style.setProperty('--zoom', z);
+      zVal.textContent = Math.round(z * 100) + '%';
+      zIn.disabled = z >= MAX - 0.001; zOut.disabled = z <= MIN + 0.001;
+    }
+    zIn.addEventListener('click', function(){ z = Math.min(MAX, Math.round((z + 0.1) * 10) / 10); apply(); });
+    zOut.addEventListener('click', function(){ z = Math.max(MIN, Math.round((z - 0.1) * 10) / 10); apply(); });
+    apply();
+  })();
 })();
 </script>
 </body>
